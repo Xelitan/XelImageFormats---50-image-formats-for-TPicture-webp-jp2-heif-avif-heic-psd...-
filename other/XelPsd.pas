@@ -2,6 +2,9 @@ unit XelPsd;
 
 {$IFDEF FPC}{$MODE DELPHI}{$ENDIF}
 {$POINTERMATH ON}
+//PSD encoder/decoder
+//Author: Xelitan.com
+//License: MIT
 
 interface
 
@@ -16,22 +19,25 @@ type
     psdRLE
   );
 
-// Dekoduje splaszczony obraz z PSD (8BPS v1) do RGBA8. Tryby: Bitmap, Grayscale,
-// Indexed, RGB, CMYK; 1/8/16-bit; kompresja raw i PackBits RLE. Warstwy pomijane.
+// Decodes the flattened (composite) image of a PSD (8BPS v1) to RGBA8. Modes: Bitmap,
+// Grayscale, Indexed, RGB, CMYK, Multichannel, Duotone (as grayscale), Lab; 1/8/16-bit;
+// raw and PackBits RLE compression. Layers are ignored.
 function DecodePsd(InBuf: TBytes; out Width, Height: Integer): TBytes;   // RGBA8
 
-// Zapisuje splaszczony PSD, 8 bit/kanal. InBuf = RGBA8. Opcjonalnie Compression
-// (domyslnie psdRLE) i WriteAlpha (domyslnie True = 4-ty kanal).
+// Writes a flattened PSD, 8 bits/channel. InBuf = RGBA8. Optional Compression
+// (default psdRLE) and WriteAlpha (default True = 4th channel).
 function EncodePsd(InBuf: TBytes; Width, Height: Integer;
   Compression: TPsdCompression = psdRLE;
   WriteAlpha: Boolean = True): TBytes;                                    // InBuf = RGBA8
 
-// Liczba warstw (layers) w pliku PSD (0 gdy brak sekcji warstw).
+// Number of layers in the PSD file (0 when there is no layer section).
 function PsdLayerCount(InBuf: TBytes): Integer;
 
-// Dekoduje pojedyncza warstwe (0-based) do RGBA8. Width/Height to rozmiar
-// prostokata warstwy (moze byc mniejszy niz plotno). Kanaly R/G/B/A wg ich ID;
-// brakujaca alfa = 255, obraz grayscale (tylko kanal 0) powielany na R,G,B.
+// Decodes a single layer (0-based) to RGBA8. Width/Height is the size of the
+// layer rectangle (may be smaller than the canvas). Color channels by their ID
+// (0..n-1) are converted according to the file's color mode (RGB/CMYK/Lab/...),
+// alpha = ID -1; missing alpha = 255, an RGB layer with only channel 0 is
+// replicated to R,G,B.
 function DecodePsdLayer(InBuf: TBytes; LayerIndex: Integer;
   out Width, Height: Integer): TBytes;                                    // RGBA8
 
@@ -43,6 +49,9 @@ const
   PSD_MODE_INDEXED   = 2;
   PSD_MODE_RGB       = 3;
   PSD_MODE_CMYK      = 4;
+  PSD_MODE_MULTICHANNEL = 7;
+  PSD_MODE_DUOTONE   = 8;
+  PSD_MODE_LAB       = 9;
 
 type
   TBytePlane = TBytes;
@@ -364,15 +373,116 @@ begin
   else Result := Byte(V);
 end;
 
-procedure PlanesToBitmap(const Planes: TPlaneArray; Channels: Word;
+// Number of color channels (excluding alpha) for the given mode. Multichannel has
+// no alpha - all channels are (spot) inks.
+function ColorChannelCount(ColorMode: Word; Channels: Integer): Integer;
+begin
+  case ColorMode of
+    PSD_MODE_RGB,
+    PSD_MODE_LAB:          Result := 3;
+    PSD_MODE_CMYK:         Result := 4;
+    PSD_MODE_MULTICHANNEL: Result := Channels;
+  else
+    Result := 1;           // Bitmap, Grayscale, Indexed, Duotone
+  end;
+end;
+
+// ------------------------------- Lab -> sRGB -------------------------------
+
+var
+  SrgbGammaLut: array[0..4095] of Byte;   // linear 0..1 (x4095) -> sRGB 8-bit
+
+procedure InitSrgbGammaLut;
+var
+  I: Integer;
+  V: Double;
+begin
+  for I := 0 to 4095 do
+  begin
+    V := I / 4095;
+    if V <= 0.0031308 then V := V * 12.92
+    else V := 1.055 * Exp(Ln(V) / 2.4) - 0.055;
+    SrgbGammaLut[I] := ClampByte(Round(V * 255));
+  end;
+end;
+
+function LabFInv(T: Double): Double; inline;
+begin
+  if T > 6 / 29 then Result := T * T * T
+  else Result := (T - 4 / 29) * (108 / 841);   // 3 * (6/29)^2
+end;
+
+function LinearToSrgb(V: Double): Byte; inline;
+begin
+  if V <= 0 then Result := SrgbGammaLut[0]
+  else if V >= 1 then Result := SrgbGammaLut[4095]
+  else Result := SrgbGammaLut[Round(V * 4095)];
+end;
+
+// Photoshop Lab (D50): L 0..255 -> 0..100, a/b 0..255 with 128 = 0.
+// Lab -> XYZ(D50) -> linear sRGB (matrix incl. Bradford adaptation D50->D65) -> gamma.
+procedure LabToRGB(L8, A8, B8: Byte; var Px: TRGBA);
+var
+  L, Fx, Fy, Fz, X, Y, Z: Double;
+begin
+  L := L8 * (100 / 255);
+  Fy := (L + 16) / 116;
+  Fx := Fy + (Integer(A8) - 128) / 500;
+  Fz := Fy - (Integer(B8) - 128) / 200;
+  X := 0.96422 * LabFInv(Fx);
+  Y := LabFInv(Fy);
+  Z := 0.82521 * LabFInv(Fz);
+  Px.R := LinearToSrgb( 3.1338561 * X - 1.6168667 * Y - 0.4906146 * Z);
+  Px.G := LinearToSrgb(-0.9787684 * X + 1.9161415 * Y + 0.0334540 * Z);
+  Px.B := LinearToSrgb( 0.0719453 * X - 0.2289914 * Y + 1.4052427 * Z);
+end;
+
+// Photoshop stores CMYK/Multichannel channels inverted:
+// 255 = 0% ink, 0 = 100% ink.
+procedure CMYKToRGB(C0, C1, C2, C3: Byte; var Px: TRGBA); inline;
+var
+  K: Integer;
+begin
+  K := 255 - C3;
+  Px.R := ClampByte(C0 - K);   // = 255 - C - K
+  Px.G := ClampByte(C1 - K);
+  Px.B := ClampByte(C2 - K);
+end;
+
+// Color = color channel planes (ColorChannelCount), Alpha = optional alpha
+// plane (empty = opaque).
+procedure PlanesToBitmap(const Color: TPlaneArray; const Alpha: TBytes;
   W, H: Cardinal; ColorMode: Word; const Palette: TRGBPalette;
   PaletteValid: Boolean; var Buf: TBytes);
 var
   X, Y, P: NativeUInt;
-  C, M, Ye, K, G, Idx: Integer;
-  A: Byte;
+  NC: Integer;
+  G: Byte;
+  HasAlpha: Boolean;
   Px: TRGBA;
 begin
+  NC := Length(Color);
+  case ColorMode of
+    PSD_MODE_BITMAP, PSD_MODE_GRAYSCALE, PSD_MODE_DUOTONE:
+      if NC < 1 then raise EPsdError.Create('PSD: grayscale image has no channel');
+    PSD_MODE_INDEXED:
+      begin
+        if not PaletteValid then raise EPsdError.Create('PSD: indexed image has no palette');
+        if NC < 1 then raise EPsdError.Create('PSD: indexed image has no channel');
+      end;
+    PSD_MODE_RGB:
+      if NC < 3 then raise EPsdError.Create('PSD: RGB image has fewer than 3 channels');
+    PSD_MODE_CMYK:
+      if NC < 4 then raise EPsdError.Create('PSD: CMYK image has fewer than 4 channels');
+    PSD_MODE_LAB:
+      if NC < 3 then raise EPsdError.Create('PSD: Lab image has fewer than 3 channels');
+    PSD_MODE_MULTICHANNEL:
+      if NC < 1 then raise EPsdError.Create('PSD: multichannel image has no channel');
+  else
+    raise EPsdError.CreateFmt('PSD: unsupported color mode %d', [ColorMode]);
+  end;
+  HasAlpha := NativeUInt(Length(Alpha)) >= NativeUInt(W) * NativeUInt(H);
+
   InitBitmap(Buf, W, H);
   Y := 0;
   P := 0;
@@ -381,58 +491,52 @@ begin
     X := 0;
     while X < W do
     begin
-      Px.R := 0;
-      Px.G := 0;
-      Px.B := 0;
-      Px.A := 255;
-
       case ColorMode of
         PSD_MODE_BITMAP,
-        PSD_MODE_GRAYSCALE:
+        PSD_MODE_GRAYSCALE,
+        PSD_MODE_DUOTONE:     // duotone: ink specification is undocumented -> grayscale
           begin
-            if Channels < 1 then raise EPsdError.Create('PSD: grayscale image has no channel');
-            G := Planes[0][P];
+            G := Color[0][P];
             Px.R := G; Px.G := G; Px.B := G;
-            if Channels >= 2 then Px.A := Planes[1][P];
           end;
 
         PSD_MODE_INDEXED:
-          begin
-            if not PaletteValid then raise EPsdError.Create('PSD: indexed image has no palette');
-            if Channels < 1 then raise EPsdError.Create('PSD: indexed image has no channel');
-            Idx := Planes[0][P];
-            Px := Palette[Idx];
-            if Channels >= 2 then Px.A := Planes[1][P]
-            else Px.A := 255;
-          end;
+          Px := Palette[Color[0][P]];
 
         PSD_MODE_RGB:
           begin
-            if Channels < 3 then raise EPsdError.Create('PSD: RGB image has fewer than 3 channels');
-            Px.R := Planes[0][P];
-            Px.G := Planes[1][P];
-            Px.B := Planes[2][P];
-            if Channels >= 4 then Px.A := Planes[3][P];
+            Px.R := Color[0][P];
+            Px.G := Color[1][P];
+            Px.B := Color[2][P];
           end;
 
         PSD_MODE_CMYK:
-          begin
-            if Channels < 4 then raise EPsdError.Create('PSD: CMYK image has fewer than 4 channels');
-            // Photoshop PSD stores CMYK composite samples inverted:
-            // 255 means 0% ink, 0 means 100% ink.
-            C := 255 - Planes[0][P];
-            M := 255 - Planes[1][P];
-            Ye := 255 - Planes[2][P];
-            K := 255 - Planes[3][P];
-            Px.R := ClampByte(255 - C - K);
-            Px.G := ClampByte(255 - M - K);
-            Px.B := ClampByte(255 - Ye - K);
-            if Channels >= 5 then Px.A := Planes[4][P];
+          CMYKToRGB(Color[0][P], Color[1][P], Color[2][P], Color[3][P], Px);
+
+        PSD_MODE_LAB:
+          LabToRGB(Color[0][P], Color[1][P], Color[2][P], Px);
+
+        PSD_MODE_MULTICHANNEL:
+          case NC of
+            1: begin   // single ink -> grayscale
+                 G := Color[0][P];
+                 Px.R := G; Px.G := G; Px.B := G;
+               end;
+            2: begin   // two overprinted inks -> product
+                 G := Byte((Cardinal(Color[0][P]) * Color[1][P] + 127) div 255);
+                 Px.R := G; Px.G := G; Px.B := G;
+               end;
+            3: begin   // C, M, Y (e.g. after conversion from RGB)
+                 Px.R := Color[0][P];
+                 Px.G := Color[1][P];
+                 Px.B := Color[2][P];
+               end;
+          else         // C, M, Y, K (+ extra spot inks ignored)
+            CMYKToRGB(Color[0][P], Color[1][P], Color[2][P], Color[3][P], Px);
           end;
-      else
-        raise EPsdError.CreateFmt('PSD: unsupported color mode %d', [ColorMode]);
       end;
 
+      if HasAlpha then Px.A := Alpha[P] else Px.A := 255;
       SetPx(Buf, Integer(W), Integer(X), Integer(Y), Px);
       Inc(P);
       Inc(X);
@@ -441,21 +545,22 @@ begin
   end;
 end;
 
-function DecodePsd(InBuf: TBytes; out Width, Height: Integer): TBytes;
-var
-  Data: TBytes;
-  Pos, I: NativeUInt;
-  Version, Channels, Depth, ColorMode: Word;
-  H, W, ColorLen: Cardinal;
-  Palette: TRGBPalette;
-  PaletteValid: Boolean;
-  Planes: TPlaneArray;
-begin
-  Data := InBuf;
-  Width := 0;
-  Height := 0;
-  SetLength(Result, 0);
+type
+  TPsdHeader = record
+    Channels, Depth, ColorMode: Word;
+    W, H: Cardinal;
+    Palette: TRGBPalette;
+    PaletteValid: Boolean;
+  end;
 
+// Reads and validates the header (26 B) and the Color Mode Data section (palette
+// for Indexed). On return Pos points at the Image Resources section.
+procedure ReadPsdHeader(const Data: TBytes; var Pos: NativeUInt; out Hdr: TPsdHeader);
+var
+  Version: Word;
+  ColorLen: Cardinal;
+  I: NativeUInt;
+begin
   Pos := 0;
   Need(Data, Pos, 26);
   if (Data[0] <> Ord('8')) or (Data[1] <> Ord('B')) or
@@ -469,65 +574,100 @@ begin
 
   Need(Data, Pos, 6);
   Inc(Pos, 6);
-  Channels := ReadBE16(Data, Pos);
-  H := ReadBE32(Data, Pos);
-  W := ReadBE32(Data, Pos);
-  Depth := ReadBE16(Data, Pos);
-  ColorMode := ReadBE16(Data, Pos);
+  Hdr.Channels := ReadBE16(Data, Pos);
+  Hdr.H := ReadBE32(Data, Pos);
+  Hdr.W := ReadBE32(Data, Pos);
+  Hdr.Depth := ReadBE16(Data, Pos);
+  Hdr.ColorMode := ReadBE16(Data, Pos);
 
-  if (Channels = 0) or (Channels > 56) then
-    raise EPsdError.CreateFmt('PSD: invalid channel count %d', [Channels]);
-  if (W = 0) or (H = 0) then
+  if (Hdr.Channels = 0) or (Hdr.Channels > 56) then
+    raise EPsdError.CreateFmt('PSD: invalid channel count %d', [Hdr.Channels]);
+  if (Hdr.W = 0) or (Hdr.H = 0) then
     raise EPsdError.Create('PSD: invalid image size');
-  if (Depth <> 1) and (Depth <> 8) and (Depth <> 16) then
-    raise EPsdError.CreateFmt('PSD: unsupported depth %d', [Depth]);
-  if (ColorMode = PSD_MODE_BITMAP) and (Depth <> 1) then
-    raise EPsdError.Create('PSD: Bitmap mode must use 1-bit depth');
-  if (ColorMode = PSD_MODE_INDEXED) and (Depth <> 8) then
-    raise EPsdError.Create('PSD: Indexed mode must use 8-bit depth');
-  if (ColorMode <> PSD_MODE_BITMAP) and
-     (ColorMode <> PSD_MODE_GRAYSCALE) and
-     (ColorMode <> PSD_MODE_INDEXED) and
-     (ColorMode <> PSD_MODE_RGB) and
-     (ColorMode <> PSD_MODE_CMYK) then
-    raise EPsdError.CreateFmt('PSD: unsupported color mode %d', [ColorMode]);
+  if (Hdr.Depth <> 1) and (Hdr.Depth <> 8) and (Hdr.Depth <> 16) then
+    raise EPsdError.CreateFmt('PSD: unsupported depth %d', [Hdr.Depth]);
+  case Hdr.ColorMode of
+    PSD_MODE_BITMAP:
+      if Hdr.Depth <> 1 then
+        raise EPsdError.Create('PSD: Bitmap mode must use 1-bit depth');
+    PSD_MODE_INDEXED:
+      if Hdr.Depth <> 8 then
+        raise EPsdError.Create('PSD: Indexed mode must use 8-bit depth');
+    PSD_MODE_GRAYSCALE, PSD_MODE_RGB, PSD_MODE_CMYK:
+      ;
+    PSD_MODE_MULTICHANNEL, PSD_MODE_DUOTONE, PSD_MODE_LAB:
+      if Hdr.Depth = 1 then
+        raise EPsdError.CreateFmt('PSD: color mode %d cannot use 1-bit depth',
+          [Hdr.ColorMode]);
+  else
+    raise EPsdError.CreateFmt('PSD: unsupported color mode %d', [Hdr.ColorMode]);
+  end;
 
-  PaletteValid := False;
+  Hdr.PaletteValid := False;
   I := 0;
   while I < 256 do
   begin
-    Palette[I].R := 0; Palette[I].G := 0; Palette[I].B := 0; Palette[I].A := 255;
+    Hdr.Palette[I].R := 0; Hdr.Palette[I].G := 0; Hdr.Palette[I].B := 0;
+    Hdr.Palette[I].A := 255;
     Inc(I);
   end;
 
+  // Color Mode Data: palette (Indexed) or duotone specification (undocumented,
+  // skipped - duotone is rendered as grayscale, as recommended by Adobe).
   ColorLen := ReadBE32(Data, Pos);
   Need(Data, Pos, ColorLen);
-  if ColorMode = PSD_MODE_INDEXED then
+  if Hdr.ColorMode = PSD_MODE_INDEXED then
   begin
     if ColorLen < 768 then
       raise EPsdError.Create('PSD: indexed palette is shorter than 768 bytes');
     I := 0;
     while I < 256 do
     begin
-      Palette[I].R := Data[Pos + I];
-      Palette[I].G := Data[Pos + 256 + I];
-      Palette[I].B := Data[Pos + 512 + I];
-      Palette[I].A := 255;
+      Hdr.Palette[I].R := Data[Pos + I];
+      Hdr.Palette[I].G := Data[Pos + 256 + I];
+      Hdr.Palette[I].B := Data[Pos + 512 + I];
+      Hdr.Palette[I].A := 255;
       Inc(I);
     end;
-    PaletteValid := True;
+    Hdr.PaletteValid := True;
   end;
   Inc(Pos, ColorLen);
+end;
 
+function DecodePsd(InBuf: TBytes; out Width, Height: Integer): TBytes;
+var
+  Data: TBytes;
+  Pos: NativeUInt;
+  Hdr: TPsdHeader;
+  Planes, Color: TPlaneArray;
+  Alpha: TBytes;
+  CC: Integer;
+begin
+  Data := InBuf;
+  Width := 0;
+  Height := 0;
+  SetLength(Result, 0);
+
+  ReadPsdHeader(Data, Pos, Hdr);
   // Image Resources
   SkipSection(Data, Pos);
   // Layer and Mask Information
   SkipSection(Data, Pos);
 
-  Width := Integer(W);
-  Height := Integer(H);
-  DecodeCompositePlanes(Data, Pos, Channels, W, H, Depth, ColorMode, Planes);
-  PlanesToBitmap(Planes, Channels, W, H, ColorMode, Palette, PaletteValid, Result);
+  DecodeCompositePlanes(Data, Pos, Hdr.Channels, Hdr.W, Hdr.H, Hdr.Depth,
+    Hdr.ColorMode, Planes);
+
+  // Color channels; the first channel after them (if any) is alpha.
+  CC := ColorChannelCount(Hdr.ColorMode, Hdr.Channels);
+  if CC > Hdr.Channels then CC := Hdr.Channels;   // PlanesToBitmap will raise an error
+  Color := Copy(Planes, 0, CC);
+  if Hdr.Channels > CC then Alpha := Planes[CC]
+  else SetLength(Alpha, 0);
+
+  PlanesToBitmap(Color, Alpha, Hdr.W, Hdr.H, Hdr.ColorMode, Hdr.Palette,
+    Hdr.PaletteValid, Result);
+  Width := Integer(Hdr.W);
+  Height := Integer(Hdr.H);
 end;
 
 procedure BuildChannelRow(const Buf: TBytes; W: Integer; Channel: Integer; Y: NativeUInt;
@@ -638,13 +778,13 @@ begin
   AppendData(Result, Body);
 end;
 
-// ============================ warstwy (layers) ============================
+// ================================= layers ==================================
 
 type
   TPsdChannelInfo = record
-    ID    : SmallInt;      // 0=R, 1=G, 2=B, -1=alpha, -2=maska uzytkownika...
-    Len   : Cardinal;      // dlugosc danych kanalu (razem ze slowem kompresji)
-    Offset: NativeUInt;    // absolutny offset danych kanalu w buforze
+    ID    : SmallInt;      // 0=R, 1=G, 2=B, -1=alpha, -2=user mask...
+    Len   : Cardinal;      // channel data length (including the compression word)
+    Offset: NativeUInt;    // absolute offset of the channel data in the buffer
   end;
   TPsdChannelArray = array of TPsdChannelInfo;
 
@@ -654,45 +794,22 @@ type
   end;
   TPsdLayerArray = array of TPsdLayerInfo;
 
-// Przechodzi naglowek + sekcje do "Layer and Mask Information" i parsuje
-// rekordy warstw, wyznaczajac absolutne offsety danych kazdego kanalu.
-// Zwraca False (Layers puste), gdy plik nie zawiera warstw.
-function ParseLayers(const Data: TBytes; out Depth: Word;
+// Walks the header + sections up to "Layer and Mask Information" and parses
+// the layer records, computing the absolute data offset of every channel.
+// Returns False (Layers empty) when the file contains no layers.
+function ParseLayers(const Data: TBytes; out Hdr: TPsdHeader;
   out Layers: TPsdLayerArray): Boolean;
 var
   Pos: NativeUInt;
-  Version: Word;
-  ColorLen, LMLen, LILen: Cardinal;
+  LMLen, LILen: Cardinal;
   LayerCount, nCh, li, ci: Integer;
   ExtraLen: Cardinal;
   Cumu: NativeUInt;
 begin
   Result := False;
   SetLength(Layers, 0);
-  Depth := 8;
 
-  Pos := 0;
-  Need(Data, Pos, 26);
-  if (Data[0] <> Ord('8')) or (Data[1] <> Ord('B')) or
-     (Data[2] <> Ord('P')) or (Data[3] <> Ord('S')) then
-    raise EPsdError.Create('PSD: invalid signature');
-  Pos := 4;
-
-  Version := ReadBE16(Data, Pos);
-  if Version <> 1 then
-    raise EPsdError.CreateFmt('PSD: unsupported version %d (PSB is not supported)', [Version]);
-
-  Need(Data, Pos, 6);
-  Inc(Pos, 6);
-  ReadBE16(Data, Pos);            // channels
-  ReadBE32(Data, Pos);            // height
-  ReadBE32(Data, Pos);            // width
-  Depth := ReadBE16(Data, Pos);
-  ReadBE16(Data, Pos);            // color mode - nieuzywane tutaj
-
-  ColorLen := ReadBE32(Data, Pos);   // Color Mode Data
-  Need(Data, Pos, ColorLen);
-  Inc(Pos, ColorLen);
+  ReadPsdHeader(Data, Pos, Hdr);     // header + Color Mode Data
 
   SkipSection(Data, Pos);            // Image Resources
 
@@ -707,7 +824,7 @@ begin
   if LILen = 0 then Exit(True);
 
   LayerCount := SmallInt(ReadBE16(Data, Pos));
-  if LayerCount < 0 then LayerCount := -LayerCount;   // <0 = pierwszy kanal to alpha
+  if LayerCount < 0 then LayerCount := -LayerCount;   // <0 = first alpha channel is merged transparency
   if LayerCount = 0 then Exit(True);
 
   SetLength(Layers, LayerCount);
@@ -736,8 +853,8 @@ begin
     Inc(Pos, ExtraLen);
   end;
 
-  // Teraz Pos wskazuje na poczatek danych obrazu kanalow. Kazdy kanal zajmuje
-  // dokladnie Len bajtow, w kolejnosci warstw i kanalow.
+  // Pos now points at the start of the channel image data. Each channel takes
+  // exactly Len bytes, in layer and channel order.
   Cumu := Pos;
   for li := 0 to LayerCount - 1 do
     for ci := 0 to High(Layers[li].Channels) do
@@ -749,7 +866,7 @@ begin
   Result := True;
 end;
 
-// Dekoduje pojedynczy kanal warstwy (raw lub PackBits RLE) do plaszczyzny 8-bit.
+// Decodes a single layer channel (raw or PackBits RLE) into an 8-bit plane.
 function DecodeChannelPlane(const Data: TBytes; ChOffset: NativeUInt;
   W, H: Cardinal; Depth: Word): TBytes;
 var
@@ -804,12 +921,12 @@ end;
 
 function PsdLayerCount(InBuf: TBytes): Integer;
 var
-  Depth: Word;
+  Hdr: TPsdHeader;
   Layers: TPsdLayerArray;
 begin
   Result := 0;
   try
-    if ParseLayers(InBuf, Depth, Layers) then
+    if ParseLayers(InBuf, Hdr, Layers) then
       Result := Length(Layers);
   except
     Result := 0;
@@ -820,65 +937,78 @@ function DecodePsdLayer(InBuf: TBytes; LayerIndex: Integer;
   out Width, Height: Integer): TBytes;
 var
   Data: TBytes;
-  Depth: Word;
+  Hdr: TPsdHeader;
   Layers: TPsdLayerArray;
   L: TPsdLayerInfo;
   W, H: Cardinal;
-  ci: Integer;
-  Plane, PlaneR, PlaneG, PlaneB, PlaneA: TBytes;
-  HasR, HasG, HasB, HasA: Boolean;
-  X, Y, P: NativeUInt;
-  Px: TRGBA;
+  ci, ID, CC: Integer;
+  Color: TPlaneArray;
+  Alpha: TBytes;
+  Fill: Byte;
 begin
   Data := InBuf;
   Width := 0;
   Height := 0;
   SetLength(Result, 0);
 
-  if not ParseLayers(Data, Depth, Layers) then Exit;
+  if not ParseLayers(Data, Hdr, Layers) then Exit;
   if (LayerIndex < 0) or (LayerIndex >= Length(Layers)) then
     raise EPsdError.CreateFmt('PSD: layer index %d out of range', [LayerIndex]);
-  if (Depth <> 8) and (Depth <> 16) then
-    raise EPsdError.CreateFmt('PSD: unsupported layer depth %d', [Depth]);
+  if (Hdr.Depth <> 8) and (Hdr.Depth <> 16) then
+    raise EPsdError.CreateFmt('PSD: unsupported layer depth %d', [Hdr.Depth]);
 
   L := Layers[LayerIndex];
-  if (L.Right <= L.Left) or (L.Bottom <= L.Top) then Exit;   // pusta warstwa
+  if (L.Right <= L.Left) or (L.Bottom <= L.Top) then Exit;   // empty layer
   W := Cardinal(L.Right - L.Left);
   H := Cardinal(L.Bottom - L.Top);
 
-  HasR := False; HasG := False; HasB := False; HasA := False;
+  // Number of color channels: by mode; for Multichannel = highest ID + 1.
+  CC := 0;
+  for ci := 0 to High(L.Channels) do
+    if L.Channels[ci].ID + 1 > CC then CC := L.Channels[ci].ID + 1;
+  if Hdr.ColorMode <> PSD_MODE_MULTICHANNEL then
+    CC := ColorChannelCount(Hdr.ColorMode, CC);
+  if CC < 1 then CC := 1;
+  SetLength(Color, CC);
+  SetLength(Alpha, 0);
+
+  // Decode only color and alpha channels (masks -2/-3 have a different rectangle).
   for ci := 0 to High(L.Channels) do
   begin
-    Plane := DecodeChannelPlane(Data, L.Channels[ci].Offset, W, H, Depth);
-    case L.Channels[ci].ID of
-       0: begin PlaneR := Plane; HasR := True; end;
-       1: begin PlaneG := Plane; HasG := True; end;
-       2: begin PlaneB := Plane; HasB := True; end;
-      -1: begin PlaneA := Plane; HasA := True; end;
-    end;
+    ID := L.Channels[ci].ID;
+    if ID = -1 then
+      Alpha := DecodeChannelPlane(Data, L.Channels[ci].Offset, W, H, Hdr.Depth)
+    else if (ID >= 0) and (ID < CC) then
+      Color[ID] := DecodeChannelPlane(Data, L.Channels[ci].Offset, W, H, Hdr.Depth);
   end;
 
+  // Missing color channels: RGB -> copy of channel 0 (grayscale), CMYK/Multichannel
+  // -> 255 (no ink), Lab a/b -> 128 (neutral), others -> 0.
+  for ci := 0 to CC - 1 do
+    if Length(Color[ci]) = 0 then
+    begin
+      if (Hdr.ColorMode = PSD_MODE_RGB) and (ci > 0) and (Length(Color[0]) > 0) then
+        Color[ci] := Copy(Color[0])
+      else
+      begin
+        case Hdr.ColorMode of
+          PSD_MODE_CMYK, PSD_MODE_MULTICHANNEL: Fill := 255;
+          PSD_MODE_LAB: if ci > 0 then Fill := 128 else Fill := 0;
+        else
+          Fill := 0;
+        end;
+        SetLength(Color[ci], NativeInt(W) * NativeInt(H));
+        FillChar(Color[ci][0], Length(Color[ci]), Fill);
+      end;
+    end;
+
+  PlanesToBitmap(Color, Alpha, W, H, Hdr.ColorMode, Hdr.Palette,
+    Hdr.PaletteValid, Result);
   Width := Integer(W);
   Height := Integer(H);
-  InitBitmap(Result, W, H);
-
-  P := 0;
-  Y := 0;
-  while Y < H do
-  begin
-    X := 0;
-    while X < W do
-    begin
-      if HasR then Px.R := PlaneR[P] else Px.R := 0;
-      if HasG then Px.G := PlaneG[P] else Px.G := Px.R;   // grayscale -> szary
-      if HasB then Px.B := PlaneB[P] else Px.B := Px.R;
-      if HasA then Px.A := PlaneA[P] else Px.A := 255;
-      SetPx(Result, Integer(W), Integer(X), Integer(Y), Px);
-      Inc(P);
-      Inc(X);
-    end;
-    Inc(Y);
-  end;
 end;
+
+initialization
+  InitSrgbGammaLut;
 
 end.
