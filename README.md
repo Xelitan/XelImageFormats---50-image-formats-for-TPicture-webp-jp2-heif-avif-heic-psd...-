@@ -4,3 +4,22 @@ Also available in Lazarus Online Package Manager. Add this package to your proje
 ```
 Image1.Picture.LoadFromFile('test.webp');
 ```
+
+## Getting 32bit TBitmap:
+```
+var Img: TXelGraphic;
+    Bmp: TBitmap;
+begin
+  Img := Image1.Picture.Graphic as TXelGraphic;
+  Bmp := Img.ToBitmap;
+```
+## Saving to a format:
+```
+var Bmp: TBitmap;
+    Webp: TWebpImage;
+begin
+  Webp := TWebpImage.Create;
+  Webp.Assign(Bmp);
+  Webp.SaveToFile('test.webp');
+  Webp.Free; 
+```
