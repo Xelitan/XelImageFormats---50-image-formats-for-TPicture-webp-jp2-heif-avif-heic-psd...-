@@ -1,0 +1,1221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="5">
+    <Name Value="XelImageFormats"/>
+    <Author Value="Xelitan.com"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <SearchPaths>
+        <IncludeFiles Value="jbig2;bpg;flif;heic"/>
+        <OtherUnitFiles Value="jbig2;jpeg2000;jpeg-xl;jpeg-xl/brotli;lepton;svg;webp;bpg;flif;heic;other;formats"/>
+        <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+    </CompilerOptions>
+    <Description Value="Native FPC/Lazarus decoders/encoders for 51 formats: JBIG2, JPEG 2000, JPEG XL, Lepton, HEIC, BPG, SVG, WebP, TIFF, PSD, FAX, PSP, DDS, BMP, ICO, ANI, CUR, WMF, EMF, CIN, CEL, MNG, JNG, PNG, PPM, PCD, PFM, PAM, HDR, FITS, RAW, TGA, PCX, QOI and more.  
+
+Installing this package registers all these formats with TPicture (.jb2, .jp2, .jxl, .lep, .svg, .webp, .bpg and more), so LoadFromFile/SaveToFile work out of the box."/>
+    <License Value="See per-subdirectory LICENSE files (Apache-2.0, MIT, JasPer-2.0)."/>
+    <Version Major="2"/>
+    <Files>
+      <Item>
+        <Filename Value="XelImageFormats.pas"/>
+        <UnitName Value="XelImageFormats"/>
+      </Item>
+      <Item>
+        <Filename Value="XelImageBase.pas"/>
+        <UnitName Value="XelImageBase"/>
+      </Item>
+      <Item>
+        <Filename Value="jbig2/XelJbig2.pas"/>
+        <UnitName Value="XelJbig2"/>
+      </Item>
+      <Item>
+        <Filename Value="jbig2/PdfJbig2.pas"/>
+        <UnitName Value="PdfJbig2"/>
+      </Item>
+      <Item>
+        <Filename Value="jbig2/PdfJbig2Mmr.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="jbig2/PdfJbig2Seg.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/XelJp2.pas"/>
+        <UnitName Value="XelJp2"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/JP2KBS.pas"/>
+        <UnitName Value="JP2KBS"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/JP2KCodec.pas"/>
+        <UnitName Value="JP2KCodec"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/JP2KCommon.pas"/>
+        <UnitName Value="JP2KCommon"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/JP2KDecGen.pas"/>
+        <UnitName Value="JP2KDecGen"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/JP2KMatrix.pas"/>
+        <UnitName Value="JP2KMatrix"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/JP2KMCT.pas"/>
+        <UnitName Value="JP2KMCT"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/JP2KMQ.pas"/>
+        <UnitName Value="JP2KMQ"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/JP2KT1.pas"/>
+        <UnitName Value="JP2KT1"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/JP2KT2.pas"/>
+        <UnitName Value="JP2KT2"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/JP2KTagTree.pas"/>
+        <UnitName Value="JP2KTagTree"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg2000/JP2KWavelet.pas"/>
+        <UnitName Value="JP2KWavelet"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/XelJxl.pas"/>
+        <UnitName Value="XelJxl"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxlimage.pas"/>
+        <UnitName Value="jxlimage"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_ans.pas"/>
+        <UnitName Value="jxl_ans"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_bits.pas"/>
+        <UnitName Value="jxl_bits"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_color.pas"/>
+        <UnitName Value="jxl_color"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_container.pas"/>
+        <UnitName Value="jxl_container"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_encoder.pas"/>
+        <UnitName Value="jxl_encoder"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_frame.pas"/>
+        <UnitName Value="jxl_frame"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_header.pas"/>
+        <UnitName Value="jxl_header"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_modular.pas"/>
+        <UnitName Value="jxl_modular"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_types.pas"/>
+        <UnitName Value="jxl_types"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_dct.pas"/>
+        <UnitName Value="jxl_dct"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_quant.pas"/>
+        <UnitName Value="jxl_quant"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_icc.pas"/>
+        <UnitName Value="jxl_icc"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_render.pas"/>
+        <UnitName Value="jxl_render"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/jxl_features.pas"/>
+        <UnitName Value="jxl_features"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/BrotliBase.pas"/>
+        <UnitName Value="BrotliBase"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/BrotliBitReader.pas"/>
+        <UnitName Value="BrotliBitReader"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/BrotliCommon.pas"/>
+        <UnitName Value="BrotliCommon"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/BrotliDecoder.pas"/>
+        <UnitName Value="BrotliDecoder"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/BrotliDictionary.pas"/>
+        <UnitName Value="BrotliDictionary"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/BrotliHuffman.pas"/>
+        <UnitName Value="BrotliHuffman"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/BrotliSharedDictionary.pas"/>
+        <UnitName Value="BrotliSharedDictionary"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/BrotliTransforms.pas"/>
+        <UnitName Value="BrotliTransforms"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/Decode1.pas"/>
+        <UnitName Value="Decode1"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/Decode2.pas"/>
+        <UnitName Value="Decode2"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/Decode3.pas"/>
+        <UnitName Value="Decode3"/>
+      </Item>
+      <Item>
+        <Filename Value="jpeg-xl/brotli/SimpleBrotli.pas"/>
+        <UnitName Value="SimpleBrotli"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/XelLepton.pas"/>
+        <UnitName Value="XelLepton"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelJpeg.pas"/>
+        <UnitName Value="XelJpeg"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelPng.pas"/>
+        <UnitName Value="XelPng"/>
+      </Item>
+      <Item>
+        <Filename Value="XelInflate.pas"/>
+        <UnitName Value="XelInflate"/>
+      </Item>
+      <Item>
+        <Filename Value="XelDeflate.pas"/>
+        <UnitName Value="XelDeflate"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonSimple.pas"/>
+        <UnitName Value="LeptonSimple"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonFile.pas"/>
+        <UnitName Value="LeptonFile"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonFeatures.pas"/>
+        <UnitName Value="LeptonFeatures"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonErrors.pas"/>
+        <UnitName Value="LeptonErrors"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonCore.pas"/>
+        <UnitName Value="LeptonCore"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonHelpers.pas"/>
+        <UnitName Value="LeptonHelpers"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonModel.pas"/>
+        <UnitName Value="LeptonModel"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonBlockContext.pas"/>
+        <UnitName Value="LeptonBlockContext"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonNeighbor.pas"/>
+        <UnitName Value="LeptonNeighbor"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonProbability.pas"/>
+        <UnitName Value="LeptonProbability"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonQuantizationTables.pas"/>
+        <UnitName Value="LeptonQuantizationTables"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonBranch.pas"/>
+        <UnitName Value="LeptonBranch"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/LeptonConsts.pas"/>
+        <UnitName Value="LeptonConsts"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/TruncateComponents.pas"/>
+        <UnitName Value="TruncateComponents"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/VpxBoolCoder.pas"/>
+        <UnitName Value="VpxBoolCoder"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/JpegBitStream.pas"/>
+        <UnitName Value="JpegBitStream"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/JpegBlockImage.pas"/>
+        <UnitName Value="JpegBlockImage"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/JpegCodes.pas"/>
+        <UnitName Value="JpegCodes"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/JpegComponentInfo.pas"/>
+        <UnitName Value="JpegComponentInfo"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/JpegHeader.pas"/>
+        <UnitName Value="JpegHeader"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/JpegHuffman.pas"/>
+        <UnitName Value="JpegHuffman"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/JpegPositionState.pas"/>
+        <UnitName Value="JpegPositionState"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/JpegRead.pas"/>
+        <UnitName Value="JpegRead"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/JpegRowSpec.pas"/>
+        <UnitName Value="JpegRowSpec"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/JpegScanDecoder.pas"/>
+        <UnitName Value="JpegScanDecoder"/>
+      </Item>
+      <Item>
+        <Filename Value="lepton/JpegWrite.pas"/>
+        <UnitName Value="JpegWrite"/>
+      </Item>
+      <Item>
+        <Filename Value="svg/SimpleSVG.pas"/>
+        <UnitName Value="SimpleSVG"/>
+      </Item>
+      <Item>
+        <Filename Value="webp/XelWebp.pas"/>
+        <UnitName Value="XelWebp"/>
+      </Item>
+      <Item>
+        <Filename Value="webp/BitmapEveryX.pas"/>
+        <UnitName Value="BitmapEveryX"/>
+      </Item>
+      <Item>
+        <Filename Value="webp/WebPDec.pas"/>
+        <UnitName Value="WebPDec"/>
+      </Item>
+      <Item>
+        <Filename Value="webp/WebPEnc.pas"/>
+        <UnitName Value="WebPEnc"/>
+      </Item>
+      <Item>
+        <Filename Value="webp/WebPAnimate.pas"/>
+        <UnitName Value="WebPAnimate"/>
+      </Item>
+      <Item>
+        <Filename Value="webp/WebPAnimated.pas"/>
+        <UnitName Value="WebPAnimated"/>
+      </Item>
+      <Item>
+        <Filename Value="AnimationCommon.pas"/>
+        <UnitName Value="AnimationCommon"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_bits.pas"/>
+        <UnitName Value="bpg_bits"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_cabac.pas"/>
+        <UnitName Value="bpg_cabac"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_cabac_enc.pas"/>
+        <UnitName Value="bpg_cabac_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_common.pas"/>
+        <UnitName Value="bpg_common"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_container.pas"/>
+        <UnitName Value="bpg_container"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_enc.pas"/>
+        <UnitName Value="bpg_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_enc_rd.pas"/>
+        <UnitName Value="bpg_enc_rd"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_enc_trial.pas"/>
+        <UnitName Value="bpg_enc_trial"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_frame.pas"/>
+        <UnitName Value="bpg_frame"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevc.pas"/>
+        <UnitName Value="bpg_hevc"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevc_cabac.pas"/>
+        <UnitName Value="bpg_hevc_cabac"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevc_defs.pas"/>
+        <UnitName Value="bpg_hevc_defs"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevc_filter.pas"/>
+        <UnitName Value="bpg_hevc_filter"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevc_mvs.pas"/>
+        <UnitName Value="bpg_hevc_mvs"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevc_ps.pas"/>
+        <UnitName Value="bpg_hevc_ps"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevc_refs.pas"/>
+        <UnitName Value="bpg_hevc_refs"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevc_sei.pas"/>
+        <UnitName Value="bpg_hevc_sei"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevcdsp.pas"/>
+        <UnitName Value="bpg_hevcdsp"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevcdsp_enc.pas"/>
+        <UnitName Value="bpg_hevcdsp_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevcmc.pas"/>
+        <UnitName Value="bpg_hevcmc"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_hevcpred.pas"/>
+        <UnitName Value="bpg_hevcpred"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_output.pas"/>
+        <UnitName Value="bpg_output"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_ps_enc.pas"/>
+        <UnitName Value="bpg_ps_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_putbits.pas"/>
+        <UnitName Value="bpg_putbits"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_sao_enc.pas"/>
+        <UnitName Value="bpg_sao_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_scan.pas"/>
+        <UnitName Value="bpg_scan"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_slice_enc.pas"/>
+        <UnitName Value="bpg_slice_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/bpg_syntax_enc.pas"/>
+        <UnitName Value="bpg_syntax_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/XelBpg.pas"/>
+        <UnitName Value="XelBpg"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/cabac_tables.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/golomb_tables.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/residual_enc.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/scan_tables.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/t_cabac.lpr"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/t_enc.lpr"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/t_ps.lpr"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/t_residual.lpr"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/t_residual2.lpr"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/t_transform.lpr"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
+        <Filename Value="bpg/t_trial.lpr"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_chance.pas"/>
+        <UnitName Value="flif_chance"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_colorrange.pas"/>
+        <UnitName Value="flif_colorrange"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_common.pas"/>
+        <UnitName Value="flif_common"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_crc32.pas"/>
+        <UnitName Value="flif_crc32"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_dec.pas"/>
+        <UnitName Value="flif_dec"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_enc.pas"/>
+        <UnitName Value="flif_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_image.pas"/>
+        <UnitName Value="flif_image"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_io.pas"/>
+        <UnitName Value="flif_io"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_maniac.pas"/>
+        <UnitName Value="flif_maniac"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_rac.pas"/>
+        <UnitName Value="flif_rac"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_symbol.pas"/>
+        <UnitName Value="flif_symbol"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_transform.pas"/>
+        <UnitName Value="flif_transform"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/flif_types.pas"/>
+        <UnitName Value="flif_types"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/XelFlif.pas"/>
+        <UnitName Value="XelFlif"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/plane_decl.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/plane_impl.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/transform_cb.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="flif/transform_frame.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Bits.pas"/>
+        <UnitName Value="Av1.Bits"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Cdf.pas"/>
+        <UnitName Value="Av1.Cdf"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.CdfData.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Decoder.pas"/>
+        <UnitName Value="Av1.Decoder"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Dq8.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.DqHi.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Frame.pas"/>
+        <UnitName Value="Av1.Frame"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Ipred.pas"/>
+        <UnitName Value="Av1.Ipred"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Itx.pas"/>
+        <UnitName Value="Av1.Itx"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.ItxAdst.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.ItxDct32.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.ItxDct64.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.LoopFilter.pas"/>
+        <UnitName Value="Av1.LoopFilter"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Msac.pas"/>
+        <UnitName Value="Av1.Msac"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Obu.pas"/>
+        <UnitName Value="Av1.Obu"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Recon.pas"/>
+        <UnitName Value="Av1.Recon"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.ScanData.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.SmWeights.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/cabac_tables.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/FilterIntraTaps.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/golomb_tables.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_bits.pas"/>
+        <UnitName Value="h265_bits"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_cabac.pas"/>
+        <UnitName Value="h265_cabac"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_cabac_enc.pas"/>
+        <UnitName Value="h265_cabac_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_common.pas"/>
+        <UnitName Value="h265_common"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_container.pas"/>
+        <UnitName Value="h265_container"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_enc.pas"/>
+        <UnitName Value="h265_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_enc_rd.pas"/>
+        <UnitName Value="h265_enc_rd"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_enc_trial.pas"/>
+        <UnitName Value="h265_enc_trial"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_frame.pas"/>
+        <UnitName Value="h265_frame"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevc.pas"/>
+        <UnitName Value="h265_hevc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevc_cabac.pas"/>
+        <UnitName Value="h265_hevc_cabac"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevc_defs.pas"/>
+        <UnitName Value="h265_hevc_defs"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevc_filter.pas"/>
+        <UnitName Value="h265_hevc_filter"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevc_mvs.pas"/>
+        <UnitName Value="h265_hevc_mvs"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevc_ps.pas"/>
+        <UnitName Value="h265_hevc_ps"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevc_refs.pas"/>
+        <UnitName Value="h265_hevc_refs"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevc_sei.pas"/>
+        <UnitName Value="h265_hevc_sei"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevcdsp.pas"/>
+        <UnitName Value="h265_hevcdsp"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevcdsp_enc.pas"/>
+        <UnitName Value="h265_hevcdsp_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevcmc.pas"/>
+        <UnitName Value="h265_hevcmc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_hevcpred.pas"/>
+        <UnitName Value="h265_hevcpred"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_output.pas"/>
+        <UnitName Value="h265_output"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_ps_enc.pas"/>
+        <UnitName Value="h265_ps_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_putbits.pas"/>
+        <UnitName Value="h265_putbits"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_sao_enc.pas"/>
+        <UnitName Value="h265_sao_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_scan.pas"/>
+        <UnitName Value="h265_scan"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_slice_enc.pas"/>
+        <UnitName Value="h265_slice_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/h265_syntax_enc.pas"/>
+        <UnitName Value="h265_syntax_enc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/XelHeic.pas"/>
+        <UnitName Value="XelHeic"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Heif.Container.pas"/>
+        <UnitName Value="Heif.Container"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Heif.Decode.pas"/>
+        <UnitName Value="Heif.Decode"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Heif.Encode.pas"/>
+        <UnitName Value="Heif.Encode"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Heif.H265.Cabac.pas"/>
+        <UnitName Value="Heif.H265.Cabac"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Heif.H265.Emit.pas"/>
+        <UnitName Value="Heif.H265.Emit"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Heif.H265.Params.pas"/>
+        <UnitName Value="Heif.H265.Params"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Heif.Hevc.pas"/>
+        <UnitName Value="Heif.Hevc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Heif.Reader.pas"/>
+        <UnitName Value="Heif.Reader"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Heif.Writer.pas"/>
+        <UnitName Value="Heif.Writer"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/residual_enc.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/scan_tables.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelAni.pas"/>
+        <UnitName Value="XelAni"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelBmp.pas"/>
+        <UnitName Value="XelBmp"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelCals.pas"/>
+        <UnitName Value="XelCals"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelCcitt.pas"/>
+        <UnitName Value="XelCcitt"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelCel.pas"/>
+        <UnitName Value="XelCel"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelCin.pas"/>
+        <UnitName Value="XelCin"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelCut.pas"/>
+        <UnitName Value="XelCut"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelDds.pas"/>
+        <UnitName Value="XelDds"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelDicom.pas"/>
+        <UnitName Value="XelDicom"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelDpx.pas"/>
+        <UnitName Value="XelDpx"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelExr.pas"/>
+        <UnitName Value="XelExr"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelFax.pas"/>
+        <UnitName Value="XelFax"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelFits.pas"/>
+        <UnitName Value="XelFits"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelGif.pas"/>
+        <UnitName Value="XelGif"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelHdr.pas"/>
+        <UnitName Value="XelHdr"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelIco.pas"/>
+        <UnitName Value="XelIco"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelJng.pas"/>
+        <UnitName Value="XelJng"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelJxr.pas"/>
+        <UnitName Value="XelJxr"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelMiff.pas"/>
+        <UnitName Value="XelMiff"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelMng.pas"/>
+        <UnitName Value="XelMng"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelMvg.pas"/>
+        <UnitName Value="XelMvg"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelPAM.pas"/>
+        <UnitName Value="XelPAM"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelPcd.pas"/>
+        <UnitName Value="XelPcd"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelPcx.pas"/>
+        <UnitName Value="XelPcx"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelPFM.pas"/>
+        <UnitName Value="XelPFM"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelPict.pas"/>
+        <UnitName Value="XelPict"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelPnm.pas"/>
+        <UnitName Value="XelPnm"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelPsd.pas"/>
+        <UnitName Value="XelPsd"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelPsp.pas"/>
+        <UnitName Value="XelPsp"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelQoi.pas"/>
+        <UnitName Value="XelQoi"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelRaw.pas"/>
+        <UnitName Value="XelRaw"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelRla.pas"/>
+        <UnitName Value="XelRla"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelSgi.pas"/>
+        <UnitName Value="XelSgi"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelTga.pas"/>
+        <UnitName Value="XelTga"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelTiff.pas"/>
+        <UnitName Value="XelTiff"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelWbmp.pas"/>
+        <UnitName Value="XelWbmp"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelWmf.pas"/>
+        <UnitName Value="XelWmf"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelXbm.pas"/>
+        <UnitName Value="XelXbm"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelXpm.pas"/>
+        <UnitName Value="XelXpm"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelXps.pas"/>
+        <UnitName Value="XelXps"/>
+      </Item>
+      <Item>
+        <Filename Value="XelBZ2Unpack.pas"/>
+        <UnitName Value="XelBZ2Unpack"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/AniImageX.pas"/>
+        <UnitName Value="AniImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/BmpImageX.pas"/>
+        <UnitName Value="BmpImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/BPGImageX.pas"/>
+        <UnitName Value="BPGImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/CalsImageX.pas"/>
+        <UnitName Value="CalsImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/CelImageX.pas"/>
+        <UnitName Value="CelImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/CinImageX.pas"/>
+        <UnitName Value="CinImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/CurImageX.pas"/>
+        <UnitName Value="CurImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/CutImageX.pas"/>
+        <UnitName Value="CutImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/DdsImageX.pas"/>
+        <UnitName Value="DdsImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/DicomImageX.pas"/>
+        <UnitName Value="DicomImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/DpxImageX.pas"/>
+        <UnitName Value="DpxImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/ExrImageX.pas"/>
+        <UnitName Value="ExrImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/FaxImageX.pas"/>
+        <UnitName Value="FaxImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/FitsImageX.pas"/>
+        <UnitName Value="FitsImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/GifImageX.pas"/>
+        <UnitName Value="GifImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/HdrImageX.pas"/>
+        <UnitName Value="HdrImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/IcoImageX.pas"/>
+        <UnitName Value="IcoImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/JBig2ImageX.pas"/>
+        <UnitName Value="JBig2ImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/JngImageX.pas"/>
+        <UnitName Value="JngImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/Jp2ImageX.pas"/>
+        <UnitName Value="Jp2ImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/JpegImageX.pas"/>
+        <UnitName Value="JpegImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/JxlImageX.pas"/>
+        <UnitName Value="JxlImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/JxrImageX.pas"/>
+        <UnitName Value="JxrImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/LeptonImageX.pas"/>
+        <UnitName Value="LeptonImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/MiffImageX.pas"/>
+        <UnitName Value="MiffImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/MngImageX.pas"/>
+        <UnitName Value="MngImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/MvgImageX.pas"/>
+        <UnitName Value="MvgImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/PamImageX.pas"/>
+        <UnitName Value="PamImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/PcdImageX.pas"/>
+        <UnitName Value="PcdImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/PcxImageX.pas"/>
+        <UnitName Value="PcxImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/PfmImageX.pas"/>
+        <UnitName Value="PfmImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/PictImageX.pas"/>
+        <UnitName Value="PictImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/PngImageX.pas"/>
+        <UnitName Value="PngImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/PnmImageX.pas"/>
+        <UnitName Value="PnmImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/PsdImageX.pas"/>
+        <UnitName Value="PsdImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/PspImageX.pas"/>
+        <UnitName Value="PspImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/QoiImageX.pas"/>
+        <UnitName Value="QoiImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/RawImageX.pas"/>
+        <UnitName Value="RawImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/RlaImageX.pas"/>
+        <UnitName Value="RlaImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/SgiImageX.pas"/>
+        <UnitName Value="SgiImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/TgaImageX.pas"/>
+        <UnitName Value="TgaImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/TiffImageX.pas"/>
+        <UnitName Value="TiffImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/WbmpImageX.pas"/>
+        <UnitName Value="WbmpImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/WebPImageX.pas"/>
+        <UnitName Value="WebPImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/WmfImageX.pas"/>
+        <UnitName Value="WmfImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/XbmImageX.pas"/>
+        <UnitName Value="XbmImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/XpmImageX.pas"/>
+        <UnitName Value="XpmImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/XpsImageX.pas"/>
+        <UnitName Value="XpsImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/FLIFImageX.pas"/>
+        <UnitName Value="FLIFImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/HeicImageX.pas"/>
+        <UnitName Value="HeicImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/SvgImageX.pas"/>
+        <UnitName Value="SvgImageX"/>
+      </Item>
+    </Files>
+    <RequiredPkgs>
+      <Item>
+        <PackageName Value="LCL"/>
+      </Item>
+      <Item>
+        <PackageName Value="FCL"/>
+      </Item>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+      <UseFileFilters Value="True"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>
