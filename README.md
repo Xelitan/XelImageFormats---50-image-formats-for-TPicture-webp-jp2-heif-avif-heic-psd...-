@@ -23,3 +23,18 @@ begin
   Webp.SaveToFile('test.webp');
   Webp.Free; 
 ```
+
+## Reading layers in PSD or TIFF
+```
+ var
+   Psd  : TPsdImage;
+   Layer: TBitmap;
+   Count: Integer;
+ begin
+   Psd := TPsdImage.Create;
+   Psd.LoadFromFile(FileName);
+   Count := Psd.LayerCount;
+   Layer := Psd.GetLayer(5);
+   Layer.Free;
+   Psd.Free;
+```
