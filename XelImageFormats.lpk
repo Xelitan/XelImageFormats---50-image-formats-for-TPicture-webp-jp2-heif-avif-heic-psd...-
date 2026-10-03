@@ -15,7 +15,7 @@
 
 Installing this package registers all these formats with TPicture (.jb2, .jp2, .jxl, .lep, .svg, .webp, .bpg and more), so LoadFromFile/SaveToFile work out of the box."/>
     <License Value="See per-subdirectory LICENSE files (Apache-2.0, MIT, JasPer-2.0)."/>
-    <Version Major="2"/>
+    <Version Major="2" Minor="1"/>
     <Files>
       <Item>
         <Filename Value="XelImageFormats.pas"/>
@@ -982,6 +982,22 @@ Installing this package registers all these formats with TPicture (.jb2, .jp2, .
         <UnitName Value="XelWmf"/>
       </Item>
       <Item>
+        <Filename Value="other/XelMet.pas"/>
+        <UnitName Value="XelMet"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelCdr.pas"/>
+        <UnitName Value="XelCdr"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelCdrDraw.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="other/XelCdrCmyk.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
         <Filename Value="other/XelXbm.pas"/>
         <UnitName Value="XelXbm"/>
       </Item>
@@ -1176,6 +1192,14 @@ Installing this package registers all these formats with TPicture (.jb2, .jp2, .
       <Item>
         <Filename Value="formats/WmfImageX.pas"/>
         <UnitName Value="WmfImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/MetImageX.pas"/>
+        <UnitName Value="MetImageX"/>
+      </Item>
+      <Item>
+        <Filename Value="formats/CdrImageX.pas"/>
+        <UnitName Value="CdrImageX"/>
       </Item>
       <Item>
         <Filename Value="formats/XbmImageX.pas"/>

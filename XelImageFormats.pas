@@ -42,7 +42,7 @@ uses
   XelCals, XelCcitt, XelCel, XelCin, XelCut, XelDds, XelDicom, XelDpx, XelExr, 
   XelFax, XelFits, XelGif, XelHdr, XelIco, XelJng, XelJxr, XelMiff, XelMng, 
   XelMvg, XelPAM, XelPcd, XelPcx, XelPFM, XelPict, XelPnm, XelPsd, XelPsp, 
-  XelQoi, XelRaw, XelRla, XelSgi, XelTga, XelTiff, XelWbmp, XelWmf, XelXbm, 
+  XelQoi, XelRaw, XelRla, XelSgi, XelTga, XelTiff, XelWbmp, XelWmf, XelMet, XelCdr, XelXbm, 
   XelXpm, XelXps, XelBZ2Unpack, AniImageX, BmpImageX, BPGImageX, CalsImageX, 
   CelImageX, CinImageX, CurImageX, CutImageX, DdsImageX, DicomImageX, 
   DpxImageX, ExrImageX, FaxImageX, FitsImageX, GifImageX, HdrImageX, 
@@ -50,7 +50,7 @@ uses
   JxrImageX, LeptonImageX, MiffImageX, MngImageX, MvgImageX, PamImageX, 
   PcdImageX, PcxImageX, PfmImageX, PictImageX, PngImageX, PnmImageX, 
   PsdImageX, PspImageX, QoiImageX, RawImageX, RlaImageX, SgiImageX, TgaImageX, 
-  TiffImageX, WbmpImageX, WebPImageX, WmfImageX, XbmImageX, XpmImageX, 
+  TiffImageX, WbmpImageX, WebPImageX, WmfImageX, MetImageX, CdrImageX, XbmImageX, XpmImageX, 
   XpsImageX, FLIFImageX, HeicImageX, SvgImageX;
 
 implementation
