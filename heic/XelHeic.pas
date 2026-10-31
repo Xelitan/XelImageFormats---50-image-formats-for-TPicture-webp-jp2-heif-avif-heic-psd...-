@@ -35,10 +35,15 @@ function EncodeHeic(InBuf: TBytes; Width, Height: Integer;                // InB
 
 implementation
 
+uses AvifAnimated;
+
 function DecodeHeic(InBuf: TBytes; out Width, Height: Integer): TBytes;
 var
   C  : THeifContainer;
   Img: THeifImage;
+  ok : Boolean;
+  Frames: TAvifRGBAFrames;
+  loop: Integer;
 begin
   Result := nil;
   Width := 0;
@@ -47,11 +52,25 @@ begin
     raise EHeicError.Create('HEIC: empty stream');
   C := THeifContainer.Create;
   try
-    C.LoadFromBytes(InBuf);
-    if not DecodeHeifPrimary(C, Img) then
+    try
+      C.LoadFromBytes(InBuf);
+      ok := DecodeHeifPrimary(C, Img);
+    except
+      // an AVIF image sequence may carry no (usable) primary still item
+      if not IsAvifSequence(InBuf) then raise;
+      ok := False;
+    end;
+    if ok then
+      // Packed RGBA8, top-down; colour matrix/range and rotation already applied.
+      HeifImageToRGBA(Img, Result, Width, Height)
+    else if IsAvifSequence(InBuf) then
+    begin
+      // first frame of the sequence
+      Frames := DecodeAvifSequence(InBuf, 1, Width, Height, loop);
+      Result := Frames[0].Pixels;
+    end
+    else
       raise EHeicError.Create('HEIC decode failed');
-    // Packed RGBA8, top-down; colour matrix/range and rotation already applied.
-    HeifImageToRGBA(Img, Result, Width, Height);
   finally
     C.Free;
   end;

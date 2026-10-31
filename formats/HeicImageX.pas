@@ -81,6 +81,7 @@ initialization
   TPicture.RegisterFileFormat('Avcs','Heic Image', THeicImage);
   TPicture.RegisterFileFormat('hif','Heic Image', THeicImage);
   TPicture.RegisterFileFormat('Avif','Heic Image', THeicImage);
+  TPicture.RegisterFileFormat('Avifs','Heic Image', THeicImage);
 
 finalization
   TPicture.UnregisterGraphicClass(THeicImage);

@@ -13,17 +13,17 @@ unit Av1.Recon;
 interface
 
 uses
-  SysUtils, Av1.Cdf, Av1.Msac;
+  SysUtils, Av1.Cdf, Av1.Msac, Av1.MsacEnc;
 
 var
-  DebugCoefs: Boolean = False;
   ReconCfMax: Integer = 32767;   // coefficient clamp: (1 shl ((bd=8?8:bd)+7))-1
 
 const
   // Square transform sizes.
   TX_4X4 = 0; TX_8X8 = 1; TX_16X16 = 2; TX_32X32 = 3; TX_64X64 = 4;
   // Transform types (subset).
-  DCT_DCT = 0;
+  DCT_DCT = 0; IDTX = 9; V_ADST = 12; H_ADST = 13; V_FLIPADST = 14;
+  H_FLIPADST = 15; WHT_WHT = 16;
   TX_CLASS_2D = 0; TX_CLASS_H = 1; TX_CLASS_V = 2;
 
 type
@@ -62,13 +62,28 @@ const
 // A/L point to the above/left coefficient-context byte arrays.
 // ADqDc/ADqAc are the DC/AC dequant multipliers for this plane; ACf receives
 // the dequantised coefficients in raster order (must hold tx_w*tx_h int32s).
-// Returns the eob (>=0), or -1 if the block is all-zero.
+// AYMode is the luma intra mode with FILTER_PRED already mapped to its
+// equivalent directional mode. For inter chroma, ATxtp carries the co-located
+// luma transform type in. Returns the eob (>=0), or -1 if the block is all-zero.
 function DecodeCoefs(var M: TMsac; var Cdf: TCdfContext;
   ATx, ABsW4, ABsH4: Integer; AIntra, APlane, AChroma: Integer;
   ASsHor, ASsVer: Integer; A, L: PByte;
   ADqDc, ADqAc: Integer; ACf: PInteger;
-  AYMode, AUvMode: Integer; AReducedTxtp, AQidxZero: Boolean;
-  out ATxtp: Integer; out AResCtx: Integer): Integer;
+  AYMode, AUvMode: Integer; AReducedTxtp, AQidxZero, ALossless: Boolean;
+  var ATxtp: Integer; out AResCtx: Integer): Integer;
+
+// Index of the last non-zero level in scan order (-1 if all zero). ALevels is
+// in coefficient layout (rc = column * min(h,32) + row).
+function CoefEob(ATx: Integer; ALevels: PInteger): Integer;
+
+// Encoder counterpart of DecodeCoefs for the 2-D transform classes: writes
+// exactly the symbols DecodeCoefs reads for the signed quantised levels in
+// ALevels, adapting the same CDFs. Returns the eob (-1 for an all-zero block).
+function EncodeCoefs(var E: TMsacEnc; var Cdf: TCdfContext;
+  ATx, ABsW4, ABsH4: Integer; AIntra, APlane, AChroma: Integer;
+  ASsHor, ASsVer: Integer; A, L: PByte; ALevels: PInteger;
+  AYMode: Integer; AReducedTxtp, AQidxZero, ALossless: Boolean;
+  ATxtp: Integer; out AResCtx: Integer): Integer;
 
 implementation
 
@@ -256,8 +271,8 @@ function DecodeCoefs(var M: TMsac; var Cdf: TCdfContext;
   ATx, ABsW4, ABsH4: Integer; AIntra, APlane, AChroma: Integer;
   ASsHor, ASsVer: Integer; A, L: PByte;
   ADqDc, ADqAc: Integer; ACf: PInteger;
-  AYMode, AUvMode: Integer; AReducedTxtp, AQidxZero: Boolean;
-  out ATxtp: Integer; out AResCtx: Integer): Integer;
+  AYMode, AUvMode: Integer; AReducedTxtp, AQidxZero, ALossless: Boolean;
+  var ATxtp: Integer; out AResCtx: Integer): Integer;
 var
   TD: TTxfmInfo;
   sctx, allSkip, txtp, txClass, is1d: Integer;
@@ -277,24 +292,40 @@ begin
   TD := TxfmDim[ATx];
   sctx := GetSkipCtx(TD, ABsW4, ABsH4, AChroma, ASsHor, ASsVer, A, L);
   allSkip := MsacDecodeBoolAdapt(M, @Cdf.coef.skip[TD.ctx][sctx][0]);
-  if DebugCoefs then Writeln(ErrOutput, Format('Post-non-zero[%d][%d][%d]: r=%d', [TD.ctx, sctx, allSkip, M.Rng]));
   if allSkip <> 0 then
   begin
-    ATxtp := DCT_DCT;
+    if ALossless then ATxtp := WHT_WHT else ATxtp := DCT_DCT;
     AResCtx := $40;
     Exit(-1);
   end;
 
   // --- transform type (chroma derived, luma coded) ---
-  if TD.max + AIntra >= TX_64X64 then
+  if ALossless then
+    txtp := WHT_WHT
+  else if TD.max + AIntra >= TX_64X64 then
     txtp := DCT_DCT
   else if AChroma <> 0 then
-    txtp := TxtpFromUvMode[AUvMode]
+  begin
+    if AIntra <> 0 then txtp := TxtpFromUvMode[AUvMode]
+    else
+    begin
+      // get_uv_inter_txtp: derived from the co-located luma transform type
+      txtp := ATxtp;
+      if TD.max = TX_32X32 then
+      begin
+        if txtp <> IDTX then txtp := DCT_DCT;
+      end
+      else if (TD.min = TX_16X16) and
+              (((1 shl txtp) and ((1 shl H_FLIPADST) or (1 shl V_FLIPADST) or
+                                  (1 shl H_ADST) or (1 shl V_ADST))) <> 0) then
+        txtp := DCT_DCT;
+    end;
+  end
   else if AQidxZero then
     txtp := DCT_DCT
-  else
+  else if AIntra <> 0 then
   begin
-    if AYMode = FILTER_PRED then ym := 0 else ym := AYMode;   // filter map TODO
+    ym := AYMode;
     if AReducedTxtp or (TD.min = TX_16X16) then
     begin
       idx := MsacDecodeSymbolAdapt(M, @Cdf.m.txtp_intra2[TD.min][ym][0], 4);
@@ -305,7 +336,24 @@ begin
       idx := MsacDecodeSymbolAdapt(M, @Cdf.m.txtp_intra1[TD.min][ym][0], 6);
       txtp := TxTypesPerSet[idx + 5];
     end;
-    if DebugCoefs then Writeln(ErrOutput, Format('Post-txtp-intra[%d->%d][%d->%d]: r=%d', [ATx, TD.min, idx, txtp, M.Rng]));
+  end
+  else
+  begin
+    if AReducedTxtp or (TD.max = TX_32X32) then
+    begin
+      idx := MsacDecodeBoolAdapt(M, @Cdf.m.txtp_inter3[TD.min][0]);
+      if idx <> 0 then txtp := DCT_DCT else txtp := IDTX;
+    end
+    else if TD.min = TX_16X16 then
+    begin
+      idx := MsacDecodeSymbolAdapt(M, @Cdf.m.txtp_inter2[0], 11);
+      txtp := TxTypesPerSet[idx + 12];
+    end
+    else
+    begin
+      idx := MsacDecodeSymbolAdapt(M, @Cdf.m.txtp_inter1[TD.min][0], 15);
+      txtp := TxTypesPerSet[idx + 24];
+    end;
   end;
   ATxtp := txtp;
   txClass := TxTypeClass[txtp];
@@ -322,13 +370,10 @@ begin
     5: eobBin := MsacDecodeSymbolAdapt(M, @Cdf.coef.eob_bin_512[AChroma][0], 9);
   else eobBin := MsacDecodeSymbolAdapt(M, @Cdf.coef.eob_bin_1024[AChroma][0], 10);
   end;
-  if DebugCoefs then Writeln(ErrOutput, Format('Post-eob_bin_%d[%d][%d][%d]: r=%d', [16 shl tx2dszctx, AChroma, is1d, eobBin, M.Rng]));
   if eobBin > 1 then
   begin
     eobHi := MsacDecodeBoolAdapt(M, @Cdf.coef.eob_hi_bit[TD.ctx][AChroma][eobBin][0]);
-    if DebugCoefs then Writeln(ErrOutput, Format('Post-eob_hi_bit: r=%d', [M.Rng]));
     eob := ((eobHi or 2) shl (eobBin - 2)) or MsacDecodeBools(M, eobBin - 2);
-    if DebugCoefs then Writeln(ErrOutput, Format('Post-eob[%d]: r=%d', [eob, M.Rng]));
   end
   else
     eob := eobBin;
@@ -374,14 +419,12 @@ begin
       TX_CLASS_H:  begin x := LongWord(eob) and LongWord(mask); y := LongWord(eob) shr shift; rc := eob; end;
     else           begin x := LongWord(eob) and LongWord(mask); y := LongWord(eob) shr shift; rc := Integer((x shl shift2) or y); end;
     end;
-    if DebugCoefs then Writeln(ErrOutput, Format('Post-lo_tok[%d][%d][%d][%d=%d=%d]: r=%d', [TD.ctx, AChroma, ctx, eob, rc, tok, M.Rng]));
     if eobTok = 2 then
     begin
       if txClass = TX_CLASS_2D then begin if (x or y) > 1 then ctx := 14 else ctx := 7; end
       else begin if y <> 0 then ctx := 14 else ctx := 7; end;
       tok := MsacDecodeHiTok(M, @Cdf.coef.br_tok[IMin(TD.ctx, 3)][AChroma][ctx][0]);
       levelTok := tok + (3 shl 6);
-      if DebugCoefs then Writeln(ErrOutput, Format('Post-hi_tok[%d][%d][%d][%d=%d=%d]: r=%d', [IMin(TD.ctx,3), AChroma, ctx, eob, rc, tok, M.Rng]));
     end;
     ACf[rc] := tok shl 11;
     levels[Integer(x) * stride + Integer(y)] := Byte(levelTok);
@@ -398,7 +441,6 @@ begin
       ctx := GetLoCtx(lvl, txClass, offIdx, mag, x, y, stride);
       if txClass = TX_CLASS_2D then y := y or x;
       tok := MsacDecodeSymbolAdapt(M, @Cdf.coef.base_tok[TD.ctx][AChroma][ctx][0], 3);
-      if DebugCoefs then Writeln(ErrOutput, Format('Post-lo_tok[%d][%d][%d][%d=%d=%d]: r=%d', [TD.ctx, AChroma, ctx, i, rcI, tok, M.Rng]));
       if tok = 3 then
       begin
         mag := mag and 63;
@@ -406,7 +448,6 @@ begin
         else begin if y > 0 then ctx := 14 else ctx := 7; end;
         if mag > 12 then Inc(ctx, 6) else Inc(ctx, Integer((mag + 1) shr 1));
         tok := MsacDecodeHiTok(M, @Cdf.coef.br_tok[IMin(TD.ctx, 3)][AChroma][ctx][0]);
-        if DebugCoefs then Writeln(ErrOutput, Format('Post-hi_tok[%d][%d][%d][%d=%d=%d]: r=%d', [IMin(TD.ctx,3), AChroma, ctx, i, rcI, tok, M.Rng]));
         lvl^ := Byte(tok + (3 shl 6));
         ACf[rcI] := Integer((LongWord(tok) shl 11) or LongWord(rc));
         rc := Integer(rcI);
@@ -428,7 +469,6 @@ begin
     if txClass = TX_CLASS_2D then ctx := 0
     else ctx := GetLoCtx(@levels[0], txClass, offIdx, mag, 0, 0, stride);
     dcTok := MsacDecodeSymbolAdapt(M, @Cdf.coef.base_tok[TD.ctx][AChroma][ctx][0], 3);
-    if DebugCoefs then Writeln(ErrOutput, Format('Post-dc_lo_tok[%d][%d][%d][%d]: r=%d', [TD.ctx, AChroma, ctx, dcTok, M.Rng]));
     if dcTok = 3 then
     begin
       if txClass = TX_CLASS_2D then
@@ -436,7 +476,6 @@ begin
       mag := mag and 63;
       if mag > 12 then ctx := 6 else ctx := Integer((mag + 1) shr 1);
       dcTok := MsacDecodeHiTok(M, @Cdf.coef.br_tok[IMin(TD.ctx, 3)][AChroma][ctx][0]);
-      if DebugCoefs then Writeln(ErrOutput, Format('Post-dc_hi_tok[%d][%d][0][%d]: r=%d', [IMin(TD.ctx,3), AChroma, dcTok, M.Rng]));
     end;
   end
   else
@@ -444,11 +483,9 @@ begin
     // dc-only
     eobTok := MsacDecodeSymbolAdapt(M, @Cdf.coef.eob_base_tok[TD.ctx][AChroma][0][0], 2);
     dcTok := 1 + eobTok;
-    if DebugCoefs then Writeln(ErrOutput, Format('Post-dc_lo_tok[%d][%d][0][%d]: r=%d', [TD.ctx, AChroma, dcTok, M.Rng]));
     if eobTok = 2 then
     begin
       dcTok := MsacDecodeHiTok(M, @Cdf.coef.br_tok[IMin(TD.ctx, 3)][AChroma][0][0]);
-      if DebugCoefs then Writeln(ErrOutput, Format('Post-dc_hi_tok[%d][%d][0][%d]: r=%d', [IMin(TD.ctx,3), AChroma, dcTok, M.Rng]));
     end;
     rc := 0;
   end;
@@ -462,13 +499,11 @@ begin
   begin
     dcSignCtx := GetDcSignCtx(ATx, A, L);
     dcSign := MsacDecodeBoolAdapt(M, @Cdf.coef.dc_sign[AChroma][dcSignCtx][0]);
-    if DebugCoefs then Writeln(ErrOutput, Format('Post-dc_sign[%d][%d][%d]: r=%d', [AChroma, dcSignCtx, dcSign, M.Rng]));
     dcDq := LongWord(ADqDc);
     dcSignLevel := Integer((LongWord(dcSign) - 1) and (2 shl 6));
     if dcTok = 15 then
     begin
       dcTok := Integer(ReadGolomb(M) + 15);
-      if DebugCoefs then Writeln(ErrOutput, Format('Post-dc_residual[%d->%d]: r=%d', [dcTok-15, dcTok, M.Rng]));
       dcTok := dcTok and $FFFFF;
       dcDq := ((dcDq * LongWord(dcTok)) and $FFFFFF) shr dqShift;
       dcDq := dcDq - LongWord(dcSign);
@@ -486,12 +521,10 @@ begin
     acDq := LongWord(ADqAc);
     repeat
       sign := MsacDecodeBoolEqui(M);
-      if DebugCoefs then Writeln(ErrOutput, Format('Post-sign[%d=%d]: r=%d', [rc, sign, M.Rng]));
       rcTok := LongWord(ACf[rc]);
       if rcTok >= (15 shl 11) then
       begin
         tok := Integer(ReadGolomb(M) + 15);
-        if DebugCoefs then Writeln(ErrOutput, Format('Post-residual[%d=%d->%d]: r=%d', [rc, tok-15, tok, M.Rng]));
         tok := tok and $FFFFF;
         mag := ((acDq * LongWord(tok)) and $FFFFFF) shr dqShift;
         mag := mag - LongWord(sign);
@@ -510,6 +543,196 @@ begin
 
   if culLevel > 63 then culLevel := 63;
   AResCtx := culLevel or dcSignLevel;
+  Result := eob;
+end;
+
+
+function CoefEob(ATx: Integer; ALevels: PInteger): Integer;
+var TD: TTxfmInfo; scan: PWord; i: Integer;
+begin
+  TD := TxfmDim[ATx];
+  scan := ScanFor(ATx);
+  for i := IMin(TD.w, 8) * IMin(TD.h, 8) * 16 - 1 downto 0 do
+    if ALevels[scan[i]] <> 0 then Exit(i);
+  Result := -1;
+end;
+
+function EncodeCoefs(var E: TMsacEnc; var Cdf: TCdfContext;
+  ATx, ABsW4, ABsH4: Integer; AIntra, APlane, AChroma: Integer;
+  ASsHor, ASsVer: Integer; A, L: PByte; ALevels: PInteger;
+  AYMode: Integer; AReducedTxtp, AQidxZero, ALossless: Boolean;
+  ATxtp: Integer; out AResCtx: Integer): Integer;
+var
+  TD: TTxfmInfo;
+  sctx, txtp, idx, tx2dszctx, eob, eobBin, i, rc, ctx, lvl, tok, absl: Integer;
+  scan: PWord;
+  levels: array[0..2047] of Byte;
+  stride, shift, mask, swc, shc, offIdx: Integer;
+  x, y, mag: LongWord;
+  culLevel, dcLevel: Integer;
+  lp: PByte;
+begin
+  TD := TxfmDim[ATx];
+  scan := ScanFor(ATx);
+  eob := CoefEob(ATx, ALevels);
+  sctx := GetSkipCtx(TD, ABsW4, ABsH4, AChroma, ASsHor, ASsVer, A, L);
+  MsacEncBoolAdapt(E, @Cdf.coef.skip[TD.ctx][sctx][0], Ord(eob < 0));
+  if eob < 0 then
+  begin
+    AResCtx := $40;
+    Exit(-1);
+  end;
+
+  // transform type (same derivation order as DecodeCoefs)
+  txtp := ATxtp;
+  if ALossless then txtp := WHT_WHT
+  else if TD.max + AIntra >= TX_64X64 then txtp := DCT_DCT
+  else if AChroma <> 0 then
+  else if AQidxZero then txtp := DCT_DCT
+  else if AIntra <> 0 then
+  begin
+    if AReducedTxtp or (TD.min = TX_16X16) then
+    begin
+      idx := 0; while TxTypesPerSet[idx] <> txtp do Inc(idx);
+      MsacEncSymbolAdapt(E, @Cdf.m.txtp_intra2[TD.min][AYMode][0], idx, 4);
+    end
+    else
+    begin
+      idx := 0; while TxTypesPerSet[idx + 5] <> txtp do Inc(idx);
+      MsacEncSymbolAdapt(E, @Cdf.m.txtp_intra1[TD.min][AYMode][0], idx, 6);
+    end;
+  end
+  else
+  begin
+    if AReducedTxtp or (TD.max = TX_32X32) then
+      MsacEncBoolAdapt(E, @Cdf.m.txtp_inter3[TD.min][0], Ord(txtp = DCT_DCT))
+    else if TD.min = TX_16X16 then
+    begin
+      idx := 0; while TxTypesPerSet[idx + 12] <> txtp do Inc(idx);
+      MsacEncSymbolAdapt(E, @Cdf.m.txtp_inter2[0], idx, 11);
+    end
+    else
+    begin
+      idx := 0; while TxTypesPerSet[idx + 24] <> txtp do Inc(idx);
+      MsacEncSymbolAdapt(E, @Cdf.m.txtp_inter1[TD.min][0], idx, 15);
+    end;
+  end;
+  if TxTypeClass[txtp] <> TX_CLASS_2D then
+    raise Exception.Create('EncodeCoefs: only 2-D transform classes are supported');
+
+  // end of block: eob in [2^(bin-1), 2^bin)
+  tx2dszctx := IMin(TD.lw, TX_32X32) + IMin(TD.lh, TX_32X32);
+  eobBin := 0;
+  while (1 shl eobBin) <= eob do Inc(eobBin);
+  case tx2dszctx of
+    0: MsacEncSymbolAdapt(E, @Cdf.coef.eob_bin_16[AChroma][0][0], eobBin, 4);
+    1: MsacEncSymbolAdapt(E, @Cdf.coef.eob_bin_32[AChroma][0][0], eobBin, 5);
+    2: MsacEncSymbolAdapt(E, @Cdf.coef.eob_bin_64[AChroma][0][0], eobBin, 6);
+    3: MsacEncSymbolAdapt(E, @Cdf.coef.eob_bin_128[AChroma][0][0], eobBin, 7);
+    4: MsacEncSymbolAdapt(E, @Cdf.coef.eob_bin_256[AChroma][0][0], eobBin, 8);
+    5: MsacEncSymbolAdapt(E, @Cdf.coef.eob_bin_512[AChroma][0], eobBin, 9);
+  else MsacEncSymbolAdapt(E, @Cdf.coef.eob_bin_1024[AChroma][0], eobBin, 10);
+  end;
+  if eobBin > 1 then
+  begin
+    MsacEncBoolAdapt(E, @Cdf.coef.eob_hi_bit[TD.ctx][AChroma][eobBin][0], (eob shr (eobBin - 2)) and 1);
+    MsacEncBools(E, LongWord(eob) and ((LongWord(1) shl (eobBin - 2)) - 1), eobBin - 2);
+  end;
+
+  dcLevel := ALevels[0];
+  if eob > 0 then
+  begin
+    swc := IMin(TD.w, 8); shc := IMin(TD.h, 8);
+    stride := 4 * shc;
+    if TD.lh < 4 then shift := TD.lh + 2 else shift := 5;
+    mask := 4 * shc - 1;
+    offIdx := Ord(ATx >= 5);
+    offIdx := offIdx + (ATx and offIdx);
+    FillChar(levels, SizeOf(levels), 0);
+
+    // eob coefficient
+    ctx := 1 + Ord(eob > swc * shc * 2) + Ord(eob > swc * shc * 4);
+    rc := scan[eob];
+    x := LongWord(rc) shr shift; y := LongWord(rc) and LongWord(mask);
+    absl := Abs(ALevels[rc]);
+    tok := IMin(absl, 3);
+    MsacEncSymbolAdapt(E, @Cdf.coef.eob_base_tok[TD.ctx][AChroma][ctx][0], tok - 1, 2);
+    if tok = 3 then
+    begin
+      if (x or y) > 1 then ctx := 14 else ctx := 7;
+      tok := IMin(absl, 15);
+      MsacEncHiTok(E, @Cdf.coef.br_tok[IMin(TD.ctx, 3)][AChroma][ctx][0], tok);
+      levels[Integer(x) * stride + Integer(y)] := Byte(tok + (3 shl 6));
+    end
+    else
+      levels[Integer(x) * stride + Integer(y)] := Byte(tok * $41);
+
+    // remaining coefficients in reverse scan order
+    for i := eob - 1 downto 1 do
+    begin
+      rc := scan[i];
+      x := LongWord(rc) shr shift; y := LongWord(rc) and LongWord(mask);
+      lp := @levels[Integer(x) * stride + Integer(y)];
+      ctx := GetLoCtx(lp, TX_CLASS_2D, offIdx, mag, x, y, stride);
+      y := y or x;
+      absl := Abs(ALevels[rc]);
+      tok := IMin(absl, 3);
+      MsacEncSymbolAdapt(E, @Cdf.coef.base_tok[TD.ctx][AChroma][ctx][0], tok, 3);
+      if tok = 3 then
+      begin
+        mag := mag and 63;
+        if y > 1 then ctx := 14 else ctx := 7;
+        if mag > 12 then Inc(ctx, 6) else Inc(ctx, Integer((mag + 1) shr 1));
+        tok := IMin(absl, 15);
+        MsacEncHiTok(E, @Cdf.coef.br_tok[IMin(TD.ctx, 3)][AChroma][ctx][0], tok);
+        lp^ := Byte(tok + (3 shl 6));
+      end
+      else
+        lp^ := Byte(tok * $41);
+    end;
+
+    // dc
+    absl := Abs(dcLevel);
+    tok := IMin(absl, 3);
+    MsacEncSymbolAdapt(E, @Cdf.coef.base_tok[TD.ctx][AChroma][0][0], tok, 3);
+    if tok = 3 then
+    begin
+      mag := levels[0 * stride + 1] + levels[1 * stride + 0] + levels[1 * stride + 1];
+      mag := mag and 63;
+      if mag > 12 then ctx := 6 else ctx := Integer((mag + 1) shr 1);
+      MsacEncHiTok(E, @Cdf.coef.br_tok[IMin(TD.ctx, 3)][AChroma][ctx][0], IMin(absl, 15));
+    end;
+  end
+  else
+  begin
+    // dc only
+    absl := Abs(dcLevel);
+    tok := IMin(absl, 3);
+    MsacEncSymbolAdapt(E, @Cdf.coef.eob_base_tok[TD.ctx][AChroma][0][0], tok - 1, 2);
+    if tok = 3 then
+      MsacEncHiTok(E, @Cdf.coef.br_tok[IMin(TD.ctx, 3)][AChroma][0][0], IMin(absl, 15));
+  end;
+
+  // signs and golomb residuals: dc first, then ac in increasing scan order
+  culLevel := 0;
+  if dcLevel <> 0 then
+  begin
+    MsacEncBoolAdapt(E, @Cdf.coef.dc_sign[AChroma][GetDcSignCtx(ATx, A, L)][0], Ord(dcLevel < 0));
+    if Abs(dcLevel) >= 15 then MsacEncGolomb(E, Abs(dcLevel) - 15);
+    culLevel := Abs(dcLevel);
+  end;
+  for i := 1 to eob do
+  begin
+    lvl := ALevels[scan[i]];
+    if lvl = 0 then Continue;
+    MsacEncBoolEqui(E, Ord(lvl < 0));
+    if Abs(lvl) >= 15 then MsacEncGolomb(E, Abs(lvl) - 15);
+    Inc(culLevel, Abs(lvl));
+  end;
+  if culLevel > 63 then culLevel := 63;
+  if dcLevel = 0 then AResCtx := culLevel or (1 shl 6)
+  else if dcLevel < 0 then AResCtx := culLevel
+  else AResCtx := culLevel or (2 shl 6);
   Result := eob;
 end;
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
-  <Package Version="5">
+  <Package Version="6">
     <Name Value="XelImageFormats"/>
     <Author Value="Xelitan.com"/>
     <CompilerOptions>
@@ -354,10 +354,6 @@ Installing this package registers all these formats with TPicture (.jb2, .jp2, .
         <UnitName Value="WebPAnimated"/>
       </Item>
       <Item>
-        <Filename Value="AnimationCommon.pas"/>
-        <UnitName Value="AnimationCommon"/>
-      </Item>
-      <Item>
         <Filename Value="bpg/bpg_bits.pas"/>
         <UnitName Value="bpg_bits"/>
       </Item>
@@ -659,6 +655,54 @@ Installing this package registers all these formats with TPicture (.jb2, .jp2, .
       </Item>
       <Item>
         <Filename Value="heic/Av1.SmWeights.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Headers.pas"/>
+        <UnitName Value="Av1.Headers"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Tables.pas"/>
+        <UnitName Value="Av1.Tables"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Mc.pas"/>
+        <UnitName Value="Av1.Mc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Refmvs.pas"/>
+        <UnitName Value="Av1.Refmvs"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.MsacEnc.pas"/>
+        <UnitName Value="Av1.MsacEnc"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Avif.Sequence.pas"/>
+        <UnitName Value="Avif.Sequence"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/AvifAnimated.pas"/>
+        <UnitName Value="AvifAnimated"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.DecBlock.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.DecRecon.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.DecFilter.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.Enc.inc"/>
+        <Type Value="Include"/>
+      </Item>
+      <Item>
+        <Filename Value="heic/Av1.McTables.inc"/>
         <Type Value="Include"/>
       </Item>
       <Item>
