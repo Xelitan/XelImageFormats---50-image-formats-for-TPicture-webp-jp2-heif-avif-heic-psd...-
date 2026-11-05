@@ -201,7 +201,7 @@ begin
         S^.sh.chroma_weight_l0[I][J] :=
           Int16((1 shl S^.sh.chroma_log2_weight_denom) + delta_chroma_weight_l0);
         S^.sh.chroma_offset_l0[I][J] := Int16(av_clip_c(delta_chroma_offset_l0 -
-          ((128 * S^.sh.chroma_weight_l0[I][J]) shr S^.sh.chroma_log2_weight_denom) + 128,
+          (SarLongint((128 * S^.sh.chroma_weight_l0[I][J]), S^.sh.chroma_log2_weight_denom)) + 128,
           -128, 127));
       end;
     end

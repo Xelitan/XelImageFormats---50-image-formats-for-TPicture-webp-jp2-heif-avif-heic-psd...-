@@ -1795,6 +1795,9 @@ begin
   else
   begin
     countOfRTS := Integer(sis.ReadBits(29) and $FFFFFFFF);
+    // each referred-to segment number takes at least one byte
+    if countOfRTS > sis.Length_ then
+      raise EJBig2.Create('Corrupt segment header: ' + IntToStr(countOfRTS) + ' referred segments');
     arrayLength := (countOfRTS + 8) shr 3;
     arrayLength := arrayLength shl 3;
     for i := 0 to arrayLength - 1 do sis.ReadBit;

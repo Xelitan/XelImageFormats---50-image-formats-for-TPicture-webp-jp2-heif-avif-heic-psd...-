@@ -68,6 +68,10 @@ type
   TJBObject = class
   public
     constructor Create;
+    // Unregisters from the arena when destroyed outside the teardown (e.g. a
+    // constructor that raises is destroyed automatically) - otherwise the
+    // arena would free the object a second time.
+    destructor Destroy; override;
   end;
 
 // Object arena for one decode run. It is a THREADVAR, not a plain global: each
@@ -84,6 +88,12 @@ constructor TJBObject.Create;
 begin
   inherited Create;
   if GArena <> nil then GArena.Add(Self);
+end;
+
+destructor TJBObject.Destroy;
+begin
+  if GArena <> nil then GArena.Remove(Self);   // nil during arena teardown
+  inherited Destroy;
 end;
 
 //============================================================================
@@ -1909,6 +1919,7 @@ var
   doc: TJBDocument;
   page: TJBPage;
   bmp: TJBBitmap;
+  arena: TList;
   i: Integer;
 begin
   Result := False;
@@ -1950,10 +1961,12 @@ begin
       end;
     end;
   finally
-    for i := 0 to GArena.Count - 1 do
-      TObject(GArena[i]).Free;
-    GArena.Free;
+    // Detach first so TJBObject.Destroy doesn't touch the list being walked.
+    arena := GArena;
     GArena := nil;
+    for i := 0 to arena.Count - 1 do
+      TObject(arena[i]).Free;
+    arena.Free;
   end;
 end;
 
