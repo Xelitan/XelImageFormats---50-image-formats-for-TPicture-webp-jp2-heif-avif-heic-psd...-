@@ -65,11 +65,13 @@ begin
   ans := TANSDecoder.Create;
   try
     ans.Init(br, kNumICCContexts);
-    for i := 0 to Int64(encSize) - 1 do
+    i:=0;
+    while i <= Int64(encSize) -1 do
     begin
       if i > 0 then b1 := Result[i - 1] else b1 := 0;
       if i > 1 then b2 := Result[i - 2] else b2 := 0;
       Result[i] := Byte(ans.Decode(ICCANSContext(i, b1, b2), br));
+      inc(i);
     end;
     if not ans.CheckFinalState then
       raise EJxlError.Create('Corrupted ICC profile');

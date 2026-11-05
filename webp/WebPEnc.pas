@@ -518,7 +518,7 @@ end;
 function ClipUV(uv, rounding: Integer): Byte;
 var v: Integer;
 begin
-  v := (uv + rounding + (128 shl 18)) shr 18;
+  v := SarLongint((uv + rounding + (128 shl 18)), 18);
   if v<0 then v:=0 else if v>255 then v:=255;
   Result := Byte(v);
 end;
