@@ -190,7 +190,7 @@ end;
 
 procedure RgbToRgbe(fr, fg, fb: Single; out R, G, B, E: Byte); inline;
 var
-  d, m: Double;
+  d, m: float;
   ex: LongInt;
 begin
   d := fr;
