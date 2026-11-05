@@ -169,7 +169,7 @@ begin
           mn := UMin(s0, mn); if s0 > mx then mx := s0; mn := UMin(s1, mn); if s1 > mx then mx := s1;
           mn := UMin(s2, mn); if s2 > mx then mx := s2; mn := UMin(s3, mn); if s3 > mx then mx := s3;
         end;
-      val := pxv + ((sum - Ord(sum < 0) + 8) shr 4);
+      val := pxv + SarLongint(sum - Ord(sum < 0) + 8, 4);
       if (priStrength > 0) and (secStrength > 0) then
       begin if val < mn then val := mn else if val > mx then val := mx; end;
       P[(bpy+r)*stride + (bpx+x)] := Word(val);
@@ -277,14 +277,14 @@ begin
       sum := sumBase;
       if SBd = 8 then Inc(sum, LrTmp[j*REST + i+3]*128);
       for k := 0 to 6 do Inc(sum, LrTmp[j*REST + i+k]*f0[k]);
-      LrHor[j*REST + i] := ClipT((sum + roh) shr rbh, 0, clipLim);
+      LrHor[j*REST + i] := ClipT(SarLongint(sum + roh, rbh), 0, clipLim);
     end;
   for j := 0 to h-1 do
     for i := 0 to w-1 do
     begin
       sum := -roff;
       for k := 0 to 6 do Inc(sum, LrHor[(j+k)*REST + i]*f1[k]);
-      dstP[(y0+j)*stride + ux0 + i] := ClipQ((sum + rov) shr rbv);
+      dstP[(y0+j)*stride + ux0 + i] := ClipQ(SarLongint(sum + rov, rbv));
     end;
 end;
 
@@ -388,7 +388,9 @@ begin
       end;
       bv := LrSumB[BB + i];
       pv := LongWord(IMax(av*n - bLoc*bLoc, 0));
-      zv := (pv * s + (1 shl 19)) shr 20;
+      // 64-bit product: p*s exceeds 2^32 at high bit depth / strong s, and
+      // FPC only widens this implicitly on 64-bit targets (i386 would wrap).
+      zv := LongWord((UInt64(pv) * s + (1 shl 19)) shr 20);
       if zv > 255 then xv := SgrXbyX[255] else xv := SgrXbyX[zv];
       LrSumsq[AA + i] := (LongInt(xv) * bv * oneByX + (1 shl 11)) shr 12;
       LrSumB[BB + i] := xv;
@@ -410,13 +412,13 @@ begin
         b6 := (LrSumsq[Aofs+j*REST+i-REST] + LrSumsq[Aofs+j*REST+i+REST])*6 +
               (LrSumsq[Aofs+j*REST+i-1-REST] + LrSumsq[Aofs+j*REST+i-1+REST] +
                LrSumsq[Aofs+j*REST+i+1-REST] + LrSumsq[Aofs+j*REST+i+1+REST])*5;
-        dst[j*384+i] := (b6 - a6*LrTmp[srcOfs+j*REST+i] + (1 shl 8)) shr 9;
+        dst[j*384+i] := SarLongint(b6 - a6*LrTmp[srcOfs+j*REST+i] + (1 shl 8), 9);
       end;
       for i := 0 to w-1 do
       begin
         a6 := LrSumB[Bofs+(j+1)*REST+i]*6 + (LrSumB[Bofs+(j+1)*REST+i-1] + LrSumB[Bofs+(j+1)*REST+i+1])*5;
         b6 := LrSumsq[Aofs+(j+1)*REST+i]*6 + (LrSumsq[Aofs+(j+1)*REST+i-1] + LrSumsq[Aofs+(j+1)*REST+i+1])*5;
-        dst[(j+1)*384+i] := (b6 - a6*LrTmp[srcOfs+(j+1)*REST+i] + (1 shl 7)) shr 8;
+        dst[(j+1)*384+i] := SarLongint(b6 - a6*LrTmp[srcOfs+(j+1)*REST+i] + (1 shl 7), 8);
       end;
       Inc(j, 2);
     end;
@@ -429,7 +431,7 @@ begin
         b6 := (LrSumsq[Aofs+j*REST+i-REST] + LrSumsq[Aofs+j*REST+i+REST])*6 +
               (LrSumsq[Aofs+j*REST+i-1-REST] + LrSumsq[Aofs+j*REST+i-1+REST] +
                LrSumsq[Aofs+j*REST+i+1-REST] + LrSumsq[Aofs+j*REST+i+1+REST])*5;
-        dst[j*384+i] := (b6 - a6*LrTmp[srcOfs+j*REST+i] + (1 shl 8)) shr 9;
+        dst[j*384+i] := SarLongint(b6 - a6*LrTmp[srcOfs+j*REST+i] + (1 shl 8), 9);
       end;
   end
   else
@@ -445,7 +447,7 @@ begin
                LrSumsq[Aofs+j*REST+i-REST] + LrSumsq[Aofs+j*REST+i+REST])*4 +
               (LrSumsq[Aofs+j*REST+i-1-REST] + LrSumsq[Aofs+j*REST+i-1+REST] +
                LrSumsq[Aofs+j*REST+i+1-REST] + LrSumsq[Aofs+j*REST+i+1+REST])*3;
-        dst[j*384+i] := (b6 - a6*LrTmp[srcOfs+j*REST+i] + (1 shl 8)) shr 9;
+        dst[j*384+i] := SarLongint(b6 - a6*LrTmp[srcOfs+j*REST+i] + (1 shl 8), 9);
       end;
   end;
 end;
@@ -472,7 +474,7 @@ begin
       for i := 0 to w-1 do
       begin
         v := w0*LrDst0[j*384+i] + w1*LrDst1[j*384+i];
-        dstP[(y0+j)*stride+ux0+i] := ClipQ(dstP[(y0+j)*stride+ux0+i] + ((v + (1 shl 10)) shr 11));
+        dstP[(y0+j)*stride+ux0+i] := ClipQ(dstP[(y0+j)*stride+ux0+i] + SarLongint(v + (1 shl 10), 11));
       end;
   end
   else if s0 <> 0 then
@@ -482,7 +484,7 @@ begin
       for i := 0 to w-1 do
       begin
         v := w0*LrDst0[j*384+i];
-        dstP[(y0+j)*stride+ux0+i] := ClipQ(dstP[(y0+j)*stride+ux0+i] + ((v + (1 shl 10)) shr 11));
+        dstP[(y0+j)*stride+ux0+i] := ClipQ(dstP[(y0+j)*stride+ux0+i] + SarLongint(v + (1 shl 10), 11));
       end;
   end
   else
@@ -492,7 +494,7 @@ begin
       for i := 0 to w-1 do
       begin
         v := w1*LrDst1[j*384+i];
-        dstP[(y0+j)*stride+ux0+i] := ClipQ(dstP[(y0+j)*stride+ux0+i] + ((v + (1 shl 10)) shr 11));
+        dstP[(y0+j)*stride+ux0+i] := ClipQ(dstP[(y0+j)*stride+ux0+i] + SarLongint(v + (1 shl 10), 11));
       end;
   end;
 end;

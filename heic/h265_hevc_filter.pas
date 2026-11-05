@@ -95,7 +95,7 @@ begin
   else qPy_a := S^.qp_y_tab[(x_cb - 1) + y_cb * min_cb_width];
   if availableB = 0 then qPy_b := qPy_pred
   else qPy_b := S^.qp_y_tab[x_cb + (y_cb - 1) * min_cb_width];
-  Result := (qPy_a + qPy_b + 1) shr 1;
+  Result := SarLongint((qPy_a + qPy_b + 1), 1);
 end;
 
 procedure ff_hevc_set_qPy(S: PHEVCContext; XBase, YBase, Log2CbSize: Integer);
@@ -497,7 +497,7 @@ begin
       bs1 := S^.vertical_bs[(X + (Y + 4) * S^.bs_width) shr 2];
       if (bs0 <> 0) or (bs1 <> 0) then
       begin
-        qp := (get_qPy(S, X - 1, Y) + get_qPy(S, X, Y) + 1) shr 1;
+        qp := SarLongint((get_qPy(S, X - 1, Y) + get_qPy(S, X, Y) + 1), 1);
         beta := betatable[av_clip_c(qp + beta_offset, 0, 51)];
         if bs0 <> 0 then
           tc[0] := tctable[av_clip_c(qp + 2 * (bs0 - 1) + ((tc_offset shr 1) shl 1), 0, 53)]
@@ -528,7 +528,7 @@ begin
         bs1 := S^.horizontal_bs[((X + 4) + Y * S^.bs_width) shr 2];
         if (bs0 <> 0) or (bs1 <> 0) then
         begin
-          qp := (get_qPy(S, X, Y - 1) + get_qPy(S, X, Y) + 1) shr 1;
+          qp := SarLongint((get_qPy(S, X, Y - 1) + get_qPy(S, X, Y) + 1), 1);
           if X >= X0 then tc_offset := cur_tc_offset else tc_offset := left_tc_offset;
           if X >= X0 then beta_offset := cur_beta_offset else beta_offset := left_beta_offset;
           beta := betatable[av_clip_c(qp + beta_offset, 0, 51)];
@@ -570,8 +570,8 @@ begin
         bs1 := S^.vertical_bs[(X + (Y + 4 * V) * S^.bs_width) shr 2];
         if (bs0 = 2) or (bs1 = 2) then
         begin
-          qp0 := (get_qPy(S, X - 1, Y) + get_qPy(S, X, Y) + 1) shr 1;
-          qp1 := (get_qPy(S, X - 1, Y + 4 * V) + get_qPy(S, X, Y + 4 * V) + 1) shr 1;
+          qp0 := SarLongint((get_qPy(S, X - 1, Y) + get_qPy(S, X, Y) + 1), 1);
+          qp1 := SarLongint((get_qPy(S, X - 1, Y + 4 * V) + get_qPy(S, X, Y + 4 * V) + 1), 1);
           if bs0 = 2 then c_tc[0] := chroma_tc(S, qp0, chroma, tc_offset) else c_tc[0] := 0;
           if bs1 = 2 then c_tc[1] := chroma_tc(S, qp1, chroma, tc_offset) else c_tc[1] := 0;
           Src := S^.frame^.Data[chroma] +
@@ -602,9 +602,9 @@ begin
           bs1 := S^.horizontal_bs[((X + 4 * H) + Y * S^.bs_width) shr 2];
           if (bs0 = 2) or (bs1 = 2) then
           begin
-            if bs0 = 2 then qp0 := (get_qPy(S, X, Y - 1) + get_qPy(S, X, Y) + 1) shr 1 else qp0 := 0;
+            if bs0 = 2 then qp0 := SarLongint((get_qPy(S, X, Y - 1) + get_qPy(S, X, Y) + 1), 1) else qp0 := 0;
             if bs1 = 2 then
-              qp1 := (get_qPy(S, X + 4 * H, Y - 1) + get_qPy(S, X + 4 * H, Y) + 1) shr 1
+              qp1 := SarLongint((get_qPy(S, X + 4 * H, Y - 1) + get_qPy(S, X + 4 * H, Y) + 1), 1)
             else qp1 := 0;
             if bs0 = 2 then c_tc[0] := chroma_tc(S, qp0, chroma, tc_offset) else c_tc[0] := 0;
             if bs1 = 2 then c_tc[1] := chroma_tc(S, qp1, chroma, cur_tc_offset) else c_tc[1] := 0;

@@ -156,7 +156,7 @@ begin
   begin
     OutP[i*2] := InP[IClip(i, from, toi-1)];
     s := 0; for j := 0 to 3 do Inc(s, InP[IClip(i+j-1, from, toi-1)] * UeKernel[j]);
-    OutP[i*2+1] := ClipPx((s + 8) shr 4);
+    OutP[i*2+1] := ClipPx(SarLongint(s + 8, 4));   // s can be negative (-1 taps)
   end;
   OutP[(hsz-1)*2] := InP[IClip(hsz-1, from, toi-1)];
 end;
